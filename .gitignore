@@ -6,3 +6,4 @@
 /.vscode
 /.vscode/launch.json
 /bin/Debug/net10.0
+/obj
