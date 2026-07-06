@@ -78,7 +78,7 @@ public class AttendanceController : ControllerBase
 
     [HttpGet("today")]
     public async Task<IActionResult>
-        GetTodayAttendance()
+        GetTodayAttendance(DateTime attendanceDate)
     {
         try
         {
@@ -86,7 +86,7 @@ public class AttendanceController : ControllerBase
             var response =
                 await _attendanceService
                     .GetTodayAttendanceAsync(
-                        userId);
+                        userId, attendanceDate);
 
             return Ok(response);
         }
@@ -163,20 +163,20 @@ public class AttendanceController : ControllerBase
         }
     }
     [HttpGet("summary")]
-    public async Task<IActionResult> GetAttendanceSummary()
+    public async Task<IActionResult> GetAttendanceSummary(DateTime attendanceDate)
     {
         var userId = User.GetUserId();
 
-        var result = await _attendanceService.GetAttendanceSummaryAsync(userId);
+        var result = await _attendanceService.GetAttendanceSummaryAsync(userId, attendanceDate);
 
         return Ok(result);
     }
     [HttpGet("weekly-summary")]
-    public async Task<IActionResult> GetWeeklySummary()
+    public async Task<IActionResult> GetWeeklySummary(DateTime attendanceDate)
     {
         var userId = User.GetUserId();
 
-        var result = await _attendanceService.GetWeeklySummaryAsync(userId);
+        var result = await _attendanceService.GetWeeklySummaryAsync(userId, attendanceDate);
 
         return Ok(result);
     }

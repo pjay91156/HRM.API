@@ -11,7 +11,7 @@ public interface IAttendanceService
         );
 
     Task<ApiResponse<TodayAttendanceResponse>>
-        GetTodayAttendanceAsync(Guid userId);
+        GetTodayAttendanceAsync(Guid userId, DateTime attendanceDate);
 
     Task<ApiResponse<List<AttendanceResponse>>>
         GetAttendanceHistoryAsync(Guid employeeId);
@@ -21,8 +21,8 @@ public interface IAttendanceService
             Guid employeeId,
             int month,
             int year);
-    Task<AttendanceSummaryResponse> GetAttendanceSummaryAsync(Guid userId);
-    Task<WeeklyAttendanceSummaryResponse> GetWeeklySummaryAsync(Guid userId);
+    Task<AttendanceSummaryResponse> GetAttendanceSummaryAsync(Guid userId, DateTime attendanceDate);
+    Task<WeeklyAttendanceSummaryResponse> GetWeeklySummaryAsync(Guid userId, DateTime attendanceDate);
     Task<ApiResponse<TeamAttendanceSummaryResponse>> GetTeamAttendanceSummaryAsync(Guid userId, DateTime attendanceDate, Guid companyId);
     Task<ApiResponse<TeamAttendanceResponse>> GetTeamAttendanceAsync(
        Guid userId,
@@ -41,25 +41,27 @@ public class AttendanceService : IAttendanceService
         _employeeRepository = employeeRepository;
     }
     public async Task<ApiResponse<TodayAttendanceResponse>>
-    GetTodayAttendanceAsync(Guid userId)
+    GetTodayAttendanceAsync(Guid userId, DateTime attendanceDate)
     {
         try
         {
+            bool isToday = attendanceDate.Date == DateTime.UtcNow.Date;
+
             var employee = await _employeeRepository.GetByUserIdAsync(userId);
             var attendance =
                 await _attendanceRepository
-                    .GetTodayAttendanceAsync(employee.Id);
+                    .GetAttendanceByDateAsync(employee.Id, attendanceDate);
 
             if (attendance == null)
             {
                 return new ApiResponse<TodayAttendanceResponse>
                 {
                     Success = true,
-                    Message = "No attendance found for today.",
+                    Message = "No attendance found for this date.",
                     Data = new TodayAttendanceResponse
                     {
-                        AttendanceDate = DateTime.UtcNow.Date,
-                        CanCheckIn = true,
+                        AttendanceDate = attendanceDate.Date,
+                        CanCheckIn = isToday,
                         CanCheckOut = false,
                         TotalWorkingHours = 0,
                         Sessions = new List<AttendanceSessionResponse>()
@@ -82,9 +84,9 @@ public class AttendanceService : IAttendanceService
                     TotalWorkingHours =
                         attendance.TotalWorkingHours,
 
-                    CanCheckIn = !hasOpenSession,
+                    CanCheckIn = isToday && !hasOpenSession,
 
-                    CanCheckOut = hasOpenSession,
+                    CanCheckOut = isToday && hasOpenSession,
 
                     Sessions = sessions.Select(x =>
                         new AttendanceSessionResponse
@@ -118,11 +120,11 @@ public class AttendanceService : IAttendanceService
             };
         }
     }
-    public async Task<AttendanceSummaryResponse> GetAttendanceSummaryAsync(Guid userId)
+    public async Task<AttendanceSummaryResponse> GetAttendanceSummaryAsync(Guid userId, DateTime attendanceDate)
 
     {
         var employee = await _employeeRepository.GetByUserIdAsync(userId);
-        return await _attendanceRepository.GetAttendanceSummaryAsync(employee.Id);
+        return await _attendanceRepository.GetAttendanceSummaryAsync(employee.Id, attendanceDate);
     }
     public async Task<ApiResponse<List<AttendanceResponse>>>
         GetAttendanceHistoryAsync(Guid employeeId)
@@ -395,10 +397,10 @@ public class AttendanceService : IAttendanceService
             };
         }
     }
-    public async Task<WeeklyAttendanceSummaryResponse> GetWeeklySummaryAsync(Guid userId)
+    public async Task<WeeklyAttendanceSummaryResponse> GetWeeklySummaryAsync(Guid userId, DateTime attendanceDate)
     {
         var employee = await _employeeRepository.GetByUserIdAsync(userId);
-        return await _attendanceRepository.GetWeeklySummaryAsync(employee.Id);
+        return await _attendanceRepository.GetWeeklySummaryAsync(employee.Id, attendanceDate);
     }
     public async Task<ApiResponse<TeamAttendanceSummaryResponse>>
 GetTeamAttendanceSummaryAsync(Guid userId, DateTime attendanceDate, Guid companyId)

@@ -1,3 +1,4 @@
+using HRM.API.DTOs;
 using HRM.API.Extensions;
 using HRM.API.Responses;
 using HRM.API.Services;
@@ -74,8 +75,8 @@ public class RegularizeAttendanceController : ControllerBase
         }
    
 
-[HttpGet("manager/pending")]
-public async Task<IActionResult> GetPendingRequests()
+[HttpGet("manager/requests")]
+public async Task<IActionResult> GetRequests()
 {
     var userId = User.GetUserId();
 
@@ -86,5 +87,52 @@ public async Task<IActionResult> GetPendingRequests()
         return BadRequest(response);
 
     return Ok(response);
+}
+
+[HttpGet("manager/pending")]
+public async Task<IActionResult> GetPendingRequests()
+{
+    return await GetRequests();
+}
+
+[HttpGet("manager/details/{attendanceId}")]
+public async Task<IActionResult> GetRegularizationDetails([FromRoute] Guid attendanceId, [FromQuery] Guid employeeId)
+{
+    var managerId = User.GetUserId();
+
+    var response = await _regularizeAttendanceService
+        .GetRegularizationDetailsAsync(managerId, attendanceId, employeeId);
+
+    if (!response.Success)
+        return BadRequest(response);
+
+    return Ok(response);
+}
+
+[HttpPut("manager/approve-reject")]
+public async Task<IActionResult> ApproveRejectRegularization([FromBody] RegularizationApprovalRequestDto request)
+{
+    try
+    {
+        var approverId = User.GetUserId();
+
+        var response = await _regularizeAttendanceService
+            .ApproveRejectRegularizationAsync(approverId, request);
+
+        if (!response.Success)
+            return BadRequest(response);
+
+        return Ok(response);
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(StatusCodes.Status500InternalServerError,
+            new ApiResponse<object>
+            {
+                Success = false,
+                Message = "An unexpected error occurred.",
+                Errors = new List<string> { ex.Message }
+            });
+    }
 }
 }

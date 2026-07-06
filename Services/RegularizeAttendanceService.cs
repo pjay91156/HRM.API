@@ -1,6 +1,7 @@
 using HRM.API.Responses;
 using HRM.API.Models;
 using HRM.API.Repositories;
+using HRM.API.DTOs;
 namespace HRM.API.Services;
 public interface IRegularizeAttendanceService
 {
@@ -12,6 +13,8 @@ public interface IRegularizeAttendanceService
     RegularizationRequest request,
     Guid userId);
     Task<ApiResponse<List<ManagerPendingRegularizationResponse>>> GetPendingRequestsAsync(Guid userId);
+    Task<ApiResponse<RegularizationDetailsResponseDto>> GetRegularizationDetailsAsync(Guid managerId, Guid attendanceId, Guid employeeId);
+    Task<ApiResponse<object>> ApproveRejectRegularizationAsync(Guid approverId, RegularizationApprovalRequestDto request);
 }
 
 
@@ -140,8 +143,8 @@ public async Task<ApiResponse<List<ManagerPendingRegularizationResponse>>> GetPe
 
         response.Success = true;
         response.Message = requests.Any()
-            ? "Pending regularization requests retrieved successfully."
-            : "No pending regularization requests found.";
+            ? "Regularization requests retrieved successfully."
+            : "No regularization requests found.";
 
         response.Data = requests;
 
@@ -159,6 +162,76 @@ public async Task<ApiResponse<List<ManagerPendingRegularizationResponse>>> GetPe
             // In production, you may prefer a generic error message instead of exposing ex.Message.
         };
 
+        return response;
+    }
+}
+
+public async Task<ApiResponse<RegularizationDetailsResponseDto>> GetRegularizationDetailsAsync(Guid managerId, Guid attendanceId, Guid employeeId)
+{
+    var response = new ApiResponse<RegularizationDetailsResponseDto>();
+
+    try
+    {
+        var details = await _regularizeAttendanceRepository
+            .GetRegularizationDetailsAsync(managerId, attendanceId, employeeId);
+
+        if (details == null)
+        {
+            response.Success = false;
+            response.Message = "Regularization details not found.";
+            return response;
+        }
+
+        response.Success = true;
+        response.Message = "Regularization details retrieved successfully.";
+        response.Data = details;
+
+        return response;
+    }
+    catch (Exception ex)
+    {
+        response.Success = false;
+        response.Message = "Failed to retrieve regularization details.";
+        response.Errors = new List<string> { ex.Message };
+        return response;
+    }
+}
+
+public async Task<ApiResponse<object>> ApproveRejectRegularizationAsync(Guid approverId, RegularizationApprovalRequestDto request)
+{
+    var response = new ApiResponse<object>();
+
+    try
+    {
+        if (request == null)
+        {
+            response.Success = false;
+            response.Message = "Request cannot be null.";
+            return response;
+        }
+
+        var result = await _regularizeAttendanceRepository
+            .ApproveRejectRegularizationAsync(approverId, request);
+
+        if (!result)
+        {
+            response.Success = false;
+            response.Message = "Unable to update regularization request.";
+            return response;
+        }
+
+        response.Success = true;
+        response.Message = request.Status == (int)AttendanceRegularizationStatus.Approved
+            ? "Regularization request approved successfully."
+            : "Regularization request rejected successfully.";
+        response.Data = null;
+
+        return response;
+    }
+    catch (Exception ex)
+    {
+        response.Success = false;
+        response.Message = ex.Message;
         return response;
     }
 }

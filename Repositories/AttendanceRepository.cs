@@ -9,6 +9,8 @@ public interface IAttendanceRepository
 {
     Task<Attendance?> GetTodayAttendanceAsync(Guid employeeId);
 
+    Task<Attendance?> GetAttendanceByDateAsync(Guid employeeId, DateTime attendanceDate);
+
     Task<AttendanceSession?> GetOpenSessionAsync(Guid employeeId);
 
     Task<int> GetLatestSessionNumberAsync(Guid attendanceId);
@@ -29,8 +31,8 @@ public interface IAttendanceRepository
         Guid employeeId,
         int month,
         int year);
-    Task<AttendanceSummaryResponse> GetAttendanceSummaryAsync(Guid employeeId);
-    Task<WeeklyAttendanceSummaryResponse> GetWeeklySummaryAsync(Guid employeeId);
+    Task<AttendanceSummaryResponse> GetAttendanceSummaryAsync(Guid employeeId, DateTime attendanceDate);
+    Task<WeeklyAttendanceSummaryResponse> GetWeeklySummaryAsync(Guid employeeId, DateTime attendanceDate);
     Task<TeamAttendanceSummaryResponse> GetTeamAttendanceSummaryAsync(Guid managerEmployeeId, DateTime attendanceDate, Guid companyId);
     Task<TeamAttendanceResponse> GetTeamAttendanceAsync(Guid userId, TeamAttendanceFilterDto request,Guid companyId);
 }
@@ -49,6 +51,16 @@ public class AttendanceRepository : IAttendanceRepository
             .FirstOrDefaultAsync(x =>
                 x.EmployeeId == employeeId &&
                 x.AttendanceDate == DateTime.UtcNow.Date &&
+                x.IsActive);
+    }
+
+    public async Task<Attendance?> GetAttendanceByDateAsync(Guid employeeId, DateTime attendanceDate)
+    {
+        return await _context.Attendances
+            .Include(x => x.Sessions)
+            .FirstOrDefaultAsync(x =>
+                x.EmployeeId == employeeId &&
+                x.AttendanceDate.Date == attendanceDate.Date &&
                 x.IsActive);
     }
 
@@ -138,15 +150,13 @@ public class AttendanceRepository : IAttendanceRepository
                 x.IsActive)
             .ToListAsync();
     }
-    public async Task<AttendanceSummaryResponse> GetAttendanceSummaryAsync(Guid employeeId)
+    public async Task<AttendanceSummaryResponse> GetAttendanceSummaryAsync(Guid employeeId, DateTime attendanceDate)
     {
-        var today = DateTime.Today;
-
         var attendance = await _context.Attendances
             .Include(x => x.Sessions)
             .FirstOrDefaultAsync(x =>
                 x.EmployeeId == employeeId &&
-                x.AttendanceDate.Date == today.Date &&
+                x.AttendanceDate.Date == attendanceDate.Date &&
                 x.IsActive);
 
         if (attendance == null)
@@ -170,16 +180,16 @@ public class AttendanceRepository : IAttendanceRepository
             TotalWorkingHours = attendance.TotalWorkingHours
         };
     }
-    public async Task<WeeklyAttendanceSummaryResponse> GetWeeklySummaryAsync(Guid employeeId)
+    public async Task<WeeklyAttendanceSummaryResponse> GetWeeklySummaryAsync(Guid employeeId, DateTime attendanceDate)
     {
-        var today = DateTime.Today;
+        var referenceDate = attendanceDate.Date;
 
         // Monday
-        int diff = today.DayOfWeek == DayOfWeek.Sunday
+        int diff = referenceDate.DayOfWeek == DayOfWeek.Sunday
             ? 6
-            : (int)today.DayOfWeek - 1;
+            : (int)referenceDate.DayOfWeek - 1;
 
-        var weekStart = today.AddDays(-diff);
+        var weekStart = referenceDate.AddDays(-diff);
 
         var weekEnd = weekStart.AddDays(6);
 
