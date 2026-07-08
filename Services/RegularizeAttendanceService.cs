@@ -2,6 +2,7 @@ using HRM.API.Responses;
 using HRM.API.Models;
 using HRM.API.Repositories;
 using HRM.API.DTOs;
+using HRM.API.Enums;
 namespace HRM.API.Services;
 public interface IRegularizeAttendanceService
 {
@@ -22,12 +23,14 @@ public class RegularizeAttendanceService : IRegularizeAttendanceService
 {
     private readonly IRegularizeAttendanceRepository _regularizeAttendanceRepository;
      private readonly IEmployeeRepository _employeeRepository;
+     private readonly INotificationService _notificationService;
 
     public RegularizeAttendanceService(
-        IRegularizeAttendanceRepository regularizeAttendanceRepository,IEmployeeRepository employeeRepository)
+        IRegularizeAttendanceRepository regularizeAttendanceRepository,IEmployeeRepository employeeRepository, INotificationService notificationService)
     {
         _regularizeAttendanceRepository = regularizeAttendanceRepository;
         _employeeRepository=employeeRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<ApiResponse<AttendanceSessionsResponse>>
@@ -109,6 +112,28 @@ public class RegularizeAttendanceService : IRegularizeAttendanceService
             response.Success = false;
             response.Message = "Unable to submit attendance regularization request.";
             return response;
+        }
+
+        var employee = await _employeeRepository.GetByUserIdAsync(userId);
+
+        if (employee?.ManagerId != null)
+        {
+            var manager = await _employeeRepository.GetByIdAsync(employee.ManagerId.Value);
+
+            if (manager != null)
+            {
+                var employeeName = $"{employee.User?.FirstName} {employee.User?.LastName}".Trim();
+
+                await _notificationService.CreateAsync(
+                    manager.UserId,
+                    "New Regularization Request",
+                    string.IsNullOrWhiteSpace(employeeName)
+                        ? "A team member submitted an attendance regularization request."
+                        : $"{employeeName} submitted an attendance regularization request.",
+                    NotificationType.RegularizationRequestSubmitted,
+                    "/team-regularize-attendance-requests",
+                    userId);
+            }
         }
 
         response.Success = true;
@@ -218,6 +243,23 @@ public async Task<ApiResponse<object>> ApproveRejectRegularizationAsync(Guid app
             response.Success = false;
             response.Message = "Unable to update regularization request.";
             return response;
+        }
+
+        var owner = await _employeeRepository.GetByIdAsync(request.EmployeeId);
+
+        if (owner != null)
+        {
+            var approved = request.Status == (int)AttendanceRegularizationStatus.Approved;
+
+            await _notificationService.CreateAsync(
+                owner.UserId,
+                approved ? "Regularization Request Approved" : "Regularization Request Rejected",
+                approved
+                    ? "Your attendance regularization request has been approved."
+                    : "Your attendance regularization request has been rejected.",
+                approved ? NotificationType.RegularizationRequestApproved : NotificationType.RegularizationRequestRejected,
+                "/regularize-attendance",
+                approverId);
         }
 
         response.Success = true;

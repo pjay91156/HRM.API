@@ -22,4 +22,6 @@ public class ApplicationDbContext : DbContext
     public DbSet<Attendance> Attendances{get;set;}
      public DbSet<AttendanceSession> AttendanceSessions{get;set;}
      public DbSet<AttendanceRegularization> AttendanceRegularizations { get; set; }
+     public DbSet<Notification> Notifications => Set<Notification>();
+      public DbSet<PerformanceCycle> PerformanceCycles => Set<PerformanceCycle>();
 }

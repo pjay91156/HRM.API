@@ -14,6 +14,7 @@ public interface IEmployeeRepository
     Task<Employee?> GetEmployeeHierarchyRootAsync(Guid userId);
     Task<List<Employee>> GetEmployeesForHierarchyAsync(Guid companyId);
     Task<Employee?> GetByUserIdAsync(Guid userId);
+    Task<Employee?> GetByIdAsync(Guid employeeId);
 
 }
 public class EmployeeRepository : IEmployeeRepository
@@ -27,7 +28,15 @@ public class EmployeeRepository : IEmployeeRepository
     public async Task<Employee?> GetByUserIdAsync(Guid userId)
     {
         return await _context.Employees
+            .Include(e => e.User)
             .FirstOrDefaultAsync(e => e.UserId == userId);
+    }
+
+    public async Task<Employee?> GetByIdAsync(Guid employeeId)
+    {
+        return await _context.Employees
+            .Include(e => e.User)
+            .FirstOrDefaultAsync(e => e.Id == employeeId);
     }
     public async Task<List<EmployeeResponse>> GetEmployeesAsync(Guid companyId)
     {

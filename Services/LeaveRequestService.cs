@@ -35,13 +35,16 @@ public class LeaveRequestService : ILeaveRequestService
 {
     private readonly ILeaveRequestRepository _leaveRequestRepository;
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly INotificationService _notificationService;
 
     public LeaveRequestService(
         ILeaveRequestRepository leaveRequestRepository,
-        IEmployeeRepository employeeRepository)
+        IEmployeeRepository employeeRepository,
+        INotificationService notificationService)
     {
         _leaveRequestRepository = leaveRequestRepository;
         _employeeRepository = employeeRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<ApiResponse<string>> ApplyLeaveAsync(
@@ -102,6 +105,26 @@ public class LeaveRequestService : ILeaveRequestService
             };
 
             await _leaveRequestRepository.AddAsync(leaveRequest);
+
+            if (employee.ManagerId.HasValue)
+            {
+                var manager = await _employeeRepository.GetByIdAsync(employee.ManagerId.Value);
+
+                if (manager != null)
+                {
+                    var employeeName = $"{employee.User?.FirstName} {employee.User?.LastName}".Trim();
+
+                    await _notificationService.CreateAsync(
+                        manager.UserId,
+                        "New Leave Request",
+                        string.IsNullOrWhiteSpace(employeeName)
+                            ? "A team member submitted a leave request awaiting your approval."
+                            : $"{employeeName} submitted a leave request awaiting your approval.",
+                        NotificationType.LeaveRequestSubmitted,
+                        "/team-leaves",
+                        userId);
+                }
+            }
 
             return new ApiResponse<string>
             {
@@ -268,6 +291,23 @@ public class LeaveRequestService : ILeaveRequestService
             leaveRequest.UpdatedBy = approverId;
 
             await _leaveRequestRepository.UpdateAsync(leaveRequest);
+
+            var owner = await _employeeRepository.GetByIdAsync(leaveRequest.EmployeeId);
+
+            if (owner != null)
+            {
+                var approved = request.Status == LeaveStatus.Approved;
+
+                await _notificationService.CreateAsync(
+                    owner.UserId,
+                    approved ? "Leave Request Approved" : "Leave Request Rejected",
+                    approved
+                        ? "Your leave request has been approved."
+                        : "Your leave request has been rejected.",
+                    approved ? NotificationType.LeaveRequestApproved : NotificationType.LeaveRequestRejected,
+                    "/my-leaves",
+                    approverId);
+            }
 
             return new ApiResponse<string>
             {
