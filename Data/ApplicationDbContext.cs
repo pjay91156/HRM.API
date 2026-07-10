@@ -24,4 +24,6 @@ public class ApplicationDbContext : DbContext
      public DbSet<AttendanceRegularization> AttendanceRegularizations { get; set; }
      public DbSet<Notification> Notifications => Set<Notification>();
       public DbSet<PerformanceCycle> PerformanceCycles => Set<PerformanceCycle>();
+      public DbSet<PerformanceRating> PerformanceRatings => Set<PerformanceRating>();
+      public DbSet<PerformanceTemplate> PerformanceTemplates => Set<PerformanceTemplate>();
 }

@@ -36,6 +36,8 @@ builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 builder.Services.AddScoped<IRegularizeAttendanceService, RegularizeAttendanceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPerformanceCycleService, PerformanceCycleService>();
+builder.Services.AddScoped<IPerformanceRatingService, PerformanceRatingService>();
+builder.Services.AddScoped<IPerformanceTemplateService, PerformanceTemplateService>();
 
 // Repositories
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
@@ -49,6 +51,8 @@ builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 builder.Services.AddScoped<IRegularizeAttendanceRepository, RegularizeAttendanceRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IPerformanceCycleRepository, PerformanceCycleRepository>();
+builder.Services.AddScoped<IPerformanceRatingRepository, PerformanceRatingRepository>();
+builder.Services.AddScoped<IPerformanceTemplateRepository, PerformanceTemplateRepository>();
 
 // CORS
 builder.Services.AddCors(options =>
