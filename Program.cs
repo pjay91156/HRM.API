@@ -38,6 +38,8 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPerformanceCycleService, PerformanceCycleService>();
 builder.Services.AddScoped<IPerformanceRatingService, PerformanceRatingService>();
 builder.Services.AddScoped<IPerformanceTemplateService, PerformanceTemplateService>();
+builder.Services.AddScoped<IPerformanceCategoryService, PerformanceCategoryService>();
+builder.Services.AddScoped<IPerformanceSkillService, PerformanceSkillService>();
 
 // Repositories
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
@@ -53,6 +55,8 @@ builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IPerformanceCycleRepository, PerformanceCycleRepository>();
 builder.Services.AddScoped<IPerformanceRatingRepository, PerformanceRatingRepository>();
 builder.Services.AddScoped<IPerformanceTemplateRepository, PerformanceTemplateRepository>();
+builder.Services.AddScoped<IPerformanceCategoryRepository, PerformanceCategoryRepository>();
+builder.Services.AddScoped<IPerformanceSkillRepository, PerformanceSkillRepository>();
 
 // CORS
 builder.Services.AddCors(options =>

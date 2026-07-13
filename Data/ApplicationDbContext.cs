@@ -26,4 +26,6 @@ public class ApplicationDbContext : DbContext
       public DbSet<PerformanceCycle> PerformanceCycles => Set<PerformanceCycle>();
       public DbSet<PerformanceRating> PerformanceRatings => Set<PerformanceRating>();
       public DbSet<PerformanceTemplate> PerformanceTemplates => Set<PerformanceTemplate>();
+      public DbSet<PerformanceCategory> PerformanceCategories => Set<PerformanceCategory>();
+      public DbSet<PerformanceSkill> PerformanceSkills => Set<PerformanceSkill>();
 }
