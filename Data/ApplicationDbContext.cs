@@ -28,4 +28,7 @@ public class ApplicationDbContext : DbContext
       public DbSet<PerformanceTemplate> PerformanceTemplates => Set<PerformanceTemplate>();
       public DbSet<PerformanceCategory> PerformanceCategories => Set<PerformanceCategory>();
       public DbSet<PerformanceSkill> PerformanceSkills => Set<PerformanceSkill>();
+      public DbSet<EmployeePerformanceReview> EmployeePerformanceReviews => Set<EmployeePerformanceReview>();
+      public DbSet<EmployeePerformanceSkillReview> EmployeePerformanceSkillReviews => Set<EmployeePerformanceSkillReview>();
+      public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 }

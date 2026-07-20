@@ -40,6 +40,9 @@ builder.Services.AddScoped<IPerformanceRatingService, PerformanceRatingService>(
 builder.Services.AddScoped<IPerformanceTemplateService, PerformanceTemplateService>();
 builder.Services.AddScoped<IPerformanceCategoryService, PerformanceCategoryService>();
 builder.Services.AddScoped<IPerformanceSkillService, PerformanceSkillService>();
+builder.Services.AddScoped<IEmployeePerformanceReviewService, EmployeePerformanceReviewService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 // Repositories
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
@@ -57,6 +60,7 @@ builder.Services.AddScoped<IPerformanceRatingRepository, PerformanceRatingReposi
 builder.Services.AddScoped<IPerformanceTemplateRepository, PerformanceTemplateRepository>();
 builder.Services.AddScoped<IPerformanceCategoryRepository, PerformanceCategoryRepository>();
 builder.Services.AddScoped<IPerformanceSkillRepository, PerformanceSkillRepository>();
+builder.Services.AddScoped<IEmployeePerformanceReviewRepository, EmployeePerformanceReviewRepository>();
 
 // CORS
 builder.Services.AddCors(options =>
@@ -67,7 +71,8 @@ builder.Services.AddCors(options =>
                 "http://localhost:5173",
                 "http://localhost:5174")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -114,6 +119,11 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowReactApp");
 
 app.UseHttpsRedirection();
+
+// Serve uploaded files (e.g. profile pictures) from wwwroot
+var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads", "profile-pictures");
+Directory.CreateDirectory(uploadsPath);
+app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();

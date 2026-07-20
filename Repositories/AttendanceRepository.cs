@@ -279,7 +279,9 @@ public class AttendanceRepository : IAttendanceRepository
             .Except(leaveEmployees)
             .Count();
 
-        int absent = total - present - leave;
+        bool isWeeklyOff = attendanceDate.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+
+        int absent = isWeeklyOff ? 0 : total - present - leave;
 
         return new TeamAttendanceSummaryResponse
         {
@@ -411,6 +413,8 @@ public class AttendanceRepository : IAttendanceRepository
 
             string status;
 
+            bool isWeeklyOff = attendanceDate.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+
             if (leave != null)
             {
                 status = "On Leave";
@@ -418,6 +422,10 @@ public class AttendanceRepository : IAttendanceRepository
             else if (attendance != null)
             {
                 status = "Present";
+            }
+            else if (isWeeklyOff)
+            {
+                status = "Weekly Off";
             }
             else
             {

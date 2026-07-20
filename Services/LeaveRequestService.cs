@@ -28,6 +28,8 @@ public interface ILeaveRequestService
     Task<
     ApiResponse<List<TeamLeaveCalendarResponse>>>
     GetTeamLeaveCalendarAsync(Guid managerId);
+
+    Task<ApiResponse<List<LeaveBalanceResponse>>> GetLeaveBalanceAsync(Guid userId);
 }
 
 
@@ -72,7 +74,14 @@ public class LeaveRequestService : ILeaveRequestService
                     };
                 }
 
-
+                if (request.HalfDayPeriod == null)
+                {
+                    return new ApiResponse<string>
+                    {
+                        Success = false,
+                        Message = "Please select First Half or Second Half for a half day leave."
+                    };
+                }
             }
             var employee = await _employeeRepository.GetByUserIdAsync(userId);
             if (employee == null)
@@ -83,6 +92,19 @@ public class LeaveRequestService : ILeaveRequestService
                     Message = "Employee is not found."
                 };
             }
+
+            var hasOverlap = await _leaveRequestRepository.HasOverlappingRequestAsync(
+                employee.Id, request.FromDate, request.ToDate);
+
+            if (hasOverlap)
+            {
+                return new ApiResponse<string>
+                {
+                    Success = false,
+                    Message = "You already have a leave request for one or more of these dates."
+                };
+            }
+
             decimal totalDays =
                 request.LeaveDuration == LeaveDuration.HalfDay
                 ? 0.5m
@@ -96,6 +118,9 @@ public class LeaveRequestService : ILeaveRequestService
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
                 LeaveDuration = request.LeaveDuration,
+                HalfDayPeriod = request.LeaveDuration == LeaveDuration.HalfDay
+                    ? request.HalfDayPeriod
+                    : null,
                 TotalDays = totalDays,
                 Reason = request.Reason,
                 Status = LeaveStatus.Pending,
@@ -355,6 +380,41 @@ public class LeaveRequestService : ILeaveRequestService
             {
                 ex.Message
             }
+            };
+        }
+    }
+
+    public async Task<ApiResponse<List<LeaveBalanceResponse>>> GetLeaveBalanceAsync(Guid userId)
+    {
+        try
+        {
+            var employee = await _employeeRepository.GetByUserIdAsync(userId);
+
+            if (employee == null)
+            {
+                return new ApiResponse<List<LeaveBalanceResponse>>
+                {
+                    Success = false,
+                    Message = "Employee is not found."
+                };
+            }
+
+            var balances = await _leaveRequestRepository.GetLeaveBalanceAsync(employee.Id);
+
+            return new ApiResponse<List<LeaveBalanceResponse>>
+            {
+                Success = true,
+                Message = "Leave balance retrieved successfully.",
+                Data = balances
+            };
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<List<LeaveBalanceResponse>>
+            {
+                Success = false,
+                Message = "Error while retrieving leave balance.",
+                Errors = new List<string> { ex.Message }
             };
         }
     }

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using HRM.API.Enums;
 
 namespace HRM.API.Models;
 
@@ -27,6 +28,13 @@ public class User : BaseEntity
 
     [Column("password_hash")]
     public string PasswordHash { get; set; } = string.Empty;
+
+    [Column("profile_picture_url")]
+    public string? ProfilePictureUrl { get; set; }
+
+    [Column("role")]
+    public UserRole Role { get; set; } = UserRole.Employee;
+
     public virtual ICollection<Employee> Employees { get; set; }
         = new List<Employee>();
 }

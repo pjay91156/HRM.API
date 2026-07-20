@@ -26,6 +26,8 @@ public class LeaveRequest : BaseEntity
     [Column("leave_duration")]
     public LeaveDuration LeaveDuration { get; set; }
 
+    [Column("half_day_period")]
+    public HalfDayPeriod? HalfDayPeriod { get; set; }
 
     [Column("total_days")]
     public decimal TotalDays { get; set; }

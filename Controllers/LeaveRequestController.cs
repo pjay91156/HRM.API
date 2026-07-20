@@ -189,6 +189,33 @@ public class LeaveRequestController : ControllerBase
                 });
         }
     }
+    [HttpGet("balance")]
+    public async Task<IActionResult> GetLeaveBalance()
+    {
+        try
+        {
+            var userId = User.GetUserId();
+
+            var response =
+                await _leaveRequestService.GetLeaveBalanceAsync(userId);
+
+            if (!response.Success)
+                return BadRequest(response);
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500,
+                new ApiResponse<string>
+                {
+                    Success = false,
+                    Message = "An error occurred while retrieving leave balance.",
+                    Errors = new List<string> { ex.Message }
+                });
+        }
+    }
+
     [HttpGet("team-calendar")]
     public async Task<IActionResult>
     GetTeamLeaveCalendar()

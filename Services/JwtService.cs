@@ -8,6 +8,8 @@ namespace HRM.API.Services;
 public interface IJwtService
 {
     string GenerateToken(User user);
+    string GenerateRefreshToken();
+    string HashToken(string token);
 }
 public class JwtService : IJwtService
 {
@@ -33,6 +35,7 @@ public class JwtService : IJwtService
             new(JwtRegisteredClaimNames.Email, user.Email),
             new("FirstName", user.FirstName),
             new("company_id", user.CompanyId.ToString()),
+            new(ClaimTypes.Role, user.Role.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
@@ -51,5 +54,18 @@ public class JwtService : IJwtService
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public string GenerateRefreshToken()
+    {
+        var randomBytes = new byte[64];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(randomBytes);
+        return Convert.ToBase64String(randomBytes);
+    }
+
+    public string HashToken(string token)
+    {
+        var bytes = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(token));
+        return Convert.ToBase64String(bytes);
     }
 }

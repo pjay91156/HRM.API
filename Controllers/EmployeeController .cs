@@ -59,6 +59,41 @@ public class EmployeeController : ControllerBase
                 });
         }
     }
+    [HttpGet("employees/{departmentId:guid}")]
+    public async Task<ActionResult<ApiResponse<EmployeeResponse>>> GetEmployeesByDepartment(Guid departmentId)
+    {
+        try
+        {
+            var companyId = User.GetCompanyId();
+
+            var response = await _employeeService.GetEmployeesByDepartmentAsync(companyId, departmentId);
+
+            return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized access while retrieving employees by department.");
+
+            return Unauthorized(new ApiResponse<List<EmployeeResponse>>
+            {
+                Success = false,
+                Message = "Unauthorized access.",
+                Errors = new List<string> { ex.Message }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while retrieving employees by department.");
+
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new ApiResponse<List<EmployeeResponse>>
+                {
+                    Success = false,
+                    Message = "An unexpected error occurred.",
+                    Errors = new List<string> { ex.Message }
+                });
+        }
+    }
     [HttpPost("employee")]
     public async Task<IActionResult> AddEmployee([FromBody] EmployeeDto request)
     {
@@ -90,6 +125,18 @@ public class EmployeeController : ControllerBase
     {
 
         var response = await _employeeService.DeleteEmployeeAsync(employeeId);
+
+        return Ok(response);
+    }
+    [HttpPut("employee/{employeeId:guid}/role")]
+    public async Task<IActionResult> UpdateEmployeeRole(Guid employeeId, [FromBody] UpdateUserRoleDto request)
+    {
+        var userId = User.GetUserId();
+
+        var response = await _employeeService.UpdateUserRoleAsync(userId, employeeId, request.Role);
+
+        if (!response.Success)
+            return BadRequest(response);
 
         return Ok(response);
     }

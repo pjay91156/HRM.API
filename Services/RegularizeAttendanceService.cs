@@ -191,14 +191,23 @@ public async Task<ApiResponse<List<ManagerPendingRegularizationResponse>>> GetPe
     }
 }
 
-public async Task<ApiResponse<RegularizationDetailsResponseDto>> GetRegularizationDetailsAsync(Guid managerId, Guid attendanceId, Guid employeeId)
+public async Task<ApiResponse<RegularizationDetailsResponseDto>> GetRegularizationDetailsAsync(Guid userId, Guid attendanceId, Guid employeeId)
 {
     var response = new ApiResponse<RegularizationDetailsResponseDto>();
 
     try
     {
+        var manager = await _employeeRepository.GetByUserIdAsync(userId);
+
+        if (manager == null)
+        {
+            response.Success = false;
+            response.Message = "Employee not found for the given user ID.";
+            return response;
+        }
+
         var details = await _regularizeAttendanceRepository
-            .GetRegularizationDetailsAsync(managerId, attendanceId, employeeId);
+            .GetRegularizationDetailsAsync(manager.Id, attendanceId, employeeId);
 
         if (details == null)
         {

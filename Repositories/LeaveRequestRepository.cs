@@ -16,6 +16,8 @@ public interface ILeaveRequestRepository
     Task UpdateAsync(LeaveRequest leaveRequest);
     Task<List<TeamLeaveRequestResponse>> GetTeamLeaveRequestsAsync(Guid managerId);
     Task<List<TeamLeaveCalendarResponse>> GetTeamLeaveCalendarAsync(Guid managerId);
+    Task<bool> HasOverlappingRequestAsync(Guid employeeId, DateTime fromDate, DateTime toDate);
+    Task<List<LeaveBalanceResponse>> GetLeaveBalanceAsync(Guid employeeId);
 
 }
 public class LeaveRequestRepository : ILeaveRequestRepository
@@ -96,7 +98,11 @@ public class LeaveRequestRepository : ILeaveRequestRepository
 
                 ToDate = lr.ToDate,
 
-                TotalDays = lr.TotalDays
+                TotalDays = lr.TotalDays,
+
+                LeaveDuration = lr.LeaveDuration,
+
+                HalfDayPeriod = lr.HalfDayPeriod
             })
             .ToListAsync();
     }
@@ -130,6 +136,8 @@ public class LeaveRequestRepository : ILeaveRequestRepository
 
                   LeaveDuration = lr.LeaveDuration,
 
+                  HalfDayPeriod = lr.HalfDayPeriod,
+
                   Reason = lr.Reason,
                   Status = lr.Status,
                   ApproverComments = lr.ApproverComments
@@ -147,6 +155,7 @@ public class LeaveRequestRepository : ILeaveRequestRepository
                 on lr.LeaveTypeId equals lt.Id
             where lr.EmployeeId == employeeId
                 && lr.IsActive
+            orderby lr.CreatedAt descending
             select new LeaveRequestResponse
             {
                 Id = lr.Id,
@@ -161,11 +170,59 @@ public class LeaveRequestRepository : ILeaveRequestRepository
 
                 LeaveDuration = lr.LeaveDuration,
 
+                HalfDayPeriod = lr.HalfDayPeriod,
+
                 Reason = lr.Reason,
                 Status = lr.Status,
                 ApproverComments = lr.ApproverComments
             })
             .ToListAsync();
+    }
+
+    public async Task<bool> HasOverlappingRequestAsync(Guid employeeId, DateTime fromDate, DateTime toDate)
+    {
+        return await _context.LeaveRequests
+            .AnyAsync(x =>
+                x.EmployeeId == employeeId &&
+                x.IsActive &&
+                (x.Status == LeaveStatus.Pending || x.Status == LeaveStatus.Approved) &&
+                x.FromDate.Date <= toDate.Date &&
+                x.ToDate.Date >= fromDate.Date);
+    }
+
+    public async Task<List<LeaveBalanceResponse>> GetLeaveBalanceAsync(Guid employeeId)
+    {
+        var leaveTypes = await _context.LeaveTypes
+            .AsNoTracking()
+            .Where(x => x.IsActive)
+            .ToListAsync();
+
+        var usedDaysByType = await _context.LeaveRequests
+            .Where(x =>
+                x.EmployeeId == employeeId &&
+                x.IsActive &&
+                x.Status == LeaveStatus.Approved)
+            .GroupBy(x => x.LeaveTypeId)
+            .Select(g => new { LeaveTypeId = g.Key, UsedDays = g.Sum(x => x.TotalDays) })
+            .ToListAsync();
+
+        return leaveTypes
+            .Select(lt =>
+            {
+                var usedDays = usedDaysByType
+                    .FirstOrDefault(x => x.LeaveTypeId == lt.Id)
+                    ?.UsedDays ?? 0;
+
+                return new LeaveBalanceResponse
+                {
+                    LeaveTypeId = lt.Id,
+                    LeaveName = lt.LeaveName,
+                    DefaultDays = lt.DefaultDays,
+                    UsedDays = usedDays,
+                    RemainingDays = lt.DefaultDays - usedDays
+                };
+            })
+            .ToList();
     }
 
 

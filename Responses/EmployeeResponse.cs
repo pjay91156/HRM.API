@@ -18,6 +18,8 @@ public class EmployeeResponse
     public DateOnly JoiningDate { get; set; }
 
     public bool IsActive { get; set; }
+
+    public string Role { get; set; } = string.Empty;
 }
 public class EmployeeHierarchyResponse
 {
@@ -34,6 +36,8 @@ public class EmployeeHierarchyResponse
     public string Email { get; set; } = string.Empty;
 
     public bool IsSelf { get; set; }
+
+    public string? ProfilePictureUrl { get; set; }
 
     public List<EmployeeHierarchyResponse> Children { get; set; } = [];
 }

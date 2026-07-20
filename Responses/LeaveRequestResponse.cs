@@ -63,4 +63,20 @@ public class TeamLeaveCalendarResponse
     public DateTime ToDate { get; set; }
 
     public decimal TotalDays { get; set; }
+
+    public LeaveDuration LeaveDuration { get; set; }
+
+    public HalfDayPeriod? HalfDayPeriod { get; set; }
+}
+public class LeaveBalanceResponse
+{
+    public Guid LeaveTypeId { get; set; }
+
+    public string LeaveName { get; set; } = string.Empty;
+
+    public decimal DefaultDays { get; set; }
+
+    public decimal UsedDays { get; set; }
+
+    public decimal RemainingDays { get; set; }
 }
