@@ -4,6 +4,7 @@ using HRM.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HRM.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260720155642_AddFloorTable")]
+    partial class AddFloorTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -709,216 +712,6 @@ namespace HRM.API.Migrations
                     b.ToTable("leave_type", "hrm");
                 });
 
-            modelBuilder.Entity("HRM.API.Models.MeetingRoom", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<int>("Capacity")
-                        .HasColumnType("int")
-                        .HasColumnName("capacity");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)")
-                        .HasColumnName("description");
-
-                    b.Property<Guid>("FloorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("floor_id");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("name");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("updated_at");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FloorId");
-
-                    b.ToTable("meeting_room", "hrm");
-                });
-
-            modelBuilder.Entity("HRM.API.Models.MeetingRoomAmenity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)")
-                        .HasColumnName("description");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("name");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("updated_at");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("meeting_room_amenity", "hrm");
-                });
-
-            modelBuilder.Entity("HRM.API.Models.MeetingRoomAmenityDetail", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("created_by");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_active");
-
-                    b.Property<Guid>("MeetingRoomAmenityId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("meeting_room_amenity_id");
-
-                    b.Property<Guid>("MeetingRoomId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("meeting_room_id");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("updated_at");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MeetingRoomAmenityId");
-
-                    b.HasIndex("MeetingRoomId");
-
-                    b.ToTable("meeting_room_amenity_detail", "hrm");
-                });
-
-            modelBuilder.Entity("HRM.API.Models.MeetingRoomBooking", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<DateOnly>("BookingDate")
-                        .HasColumnType("date")
-                        .HasColumnName("booking_date");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("created_by");
-
-                    b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("employee_id");
-
-                    b.Property<TimeOnly>("EndTime")
-                        .HasColumnType("time")
-                        .HasColumnName("end_time");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_active");
-
-                    b.Property<Guid>("MeetingRoomId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("meeting_room_id");
-
-                    b.Property<int?>("NumberOfAttendees")
-                        .HasColumnType("int")
-                        .HasColumnName("number_of_attendees");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)")
-                        .HasColumnName("reason");
-
-                    b.Property<TimeOnly>("StartTime")
-                        .HasColumnType("time")
-                        .HasColumnName("start_time");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint")
-                        .HasColumnName("status");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("updated_at");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.HasIndex("MeetingRoomId");
-
-                    b.ToTable("meeting_room_booking", "hrm");
-                });
-
             modelBuilder.Entity("HRM.API.Models.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1502,55 +1295,6 @@ namespace HRM.API.Migrations
                     b.Navigation("PerformanceSkill");
                 });
 
-            modelBuilder.Entity("HRM.API.Models.MeetingRoom", b =>
-                {
-                    b.HasOne("HRM.API.Models.Floor", "Floor")
-                        .WithMany()
-                        .HasForeignKey("FloorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Floor");
-                });
-
-            modelBuilder.Entity("HRM.API.Models.MeetingRoomAmenityDetail", b =>
-                {
-                    b.HasOne("HRM.API.Models.MeetingRoomAmenity", "MeetingRoomAmenity")
-                        .WithMany("MeetingRoomAmenityDetails")
-                        .HasForeignKey("MeetingRoomAmenityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("HRM.API.Models.MeetingRoom", "MeetingRoom")
-                        .WithMany("MeetingRoomAmenityDetails")
-                        .HasForeignKey("MeetingRoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("MeetingRoom");
-
-                    b.Navigation("MeetingRoomAmenity");
-                });
-
-            modelBuilder.Entity("HRM.API.Models.MeetingRoomBooking", b =>
-                {
-                    b.HasOne("HRM.API.Models.Employee", "Employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("HRM.API.Models.MeetingRoom", "MeetingRoom")
-                        .WithMany()
-                        .HasForeignKey("MeetingRoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Employee");
-
-                    b.Navigation("MeetingRoom");
-                });
-
             modelBuilder.Entity("HRM.API.Models.Notification", b =>
                 {
                     b.HasOne("HRM.API.Models.User", "User")
@@ -1637,16 +1381,6 @@ namespace HRM.API.Migrations
             modelBuilder.Entity("HRM.API.Models.EmployeePerformanceReview", b =>
                 {
                     b.Navigation("SkillReviews");
-                });
-
-            modelBuilder.Entity("HRM.API.Models.MeetingRoom", b =>
-                {
-                    b.Navigation("MeetingRoomAmenityDetails");
-                });
-
-            modelBuilder.Entity("HRM.API.Models.MeetingRoomAmenity", b =>
-                {
-                    b.Navigation("MeetingRoomAmenityDetails");
                 });
 
             modelBuilder.Entity("HRM.API.Models.PerformanceCategory", b =>

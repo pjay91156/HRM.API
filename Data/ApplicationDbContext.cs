@@ -31,4 +31,9 @@ public class ApplicationDbContext : DbContext
       public DbSet<EmployeePerformanceReview> EmployeePerformanceReviews => Set<EmployeePerformanceReview>();
       public DbSet<EmployeePerformanceSkillReview> EmployeePerformanceSkillReviews => Set<EmployeePerformanceSkillReview>();
       public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+      public DbSet<Floor> Floors => Set<Floor>();
+      public DbSet<MeetingRoom> MeetingRooms => Set<MeetingRoom>();
+      public DbSet<MeetingRoomAmenity> MeetingRoomAmenities => Set<MeetingRoomAmenity>();
+      public DbSet<MeetingRoomAmenityDetail> MeetingRoomAmenityDetails => Set<MeetingRoomAmenityDetail>();
+      public DbSet<MeetingRoomBooking> MeetingRoomBookings => Set<MeetingRoomBooking>();
 }

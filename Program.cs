@@ -43,6 +43,10 @@ builder.Services.AddScoped<IPerformanceSkillService, PerformanceSkillService>();
 builder.Services.AddScoped<IEmployeePerformanceReviewService, EmployeePerformanceReviewService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IFloorService, FloorService>();
+builder.Services.AddScoped<IMeetingRoomAmenityService, MeetingRoomAmenityService>();
+builder.Services.AddScoped<IMeetingRoomService, MeetingRoomService>();
+builder.Services.AddScoped<IMeetingRoomBookingService, MeetingRoomBookingService>();
 
 // Repositories
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
@@ -61,6 +65,10 @@ builder.Services.AddScoped<IPerformanceTemplateRepository, PerformanceTemplateRe
 builder.Services.AddScoped<IPerformanceCategoryRepository, PerformanceCategoryRepository>();
 builder.Services.AddScoped<IPerformanceSkillRepository, PerformanceSkillRepository>();
 builder.Services.AddScoped<IEmployeePerformanceReviewRepository, EmployeePerformanceReviewRepository>();
+builder.Services.AddScoped<IFloorRepository, FloorRepository>();
+builder.Services.AddScoped<IMeetingRoomAmenityRepository, MeetingRoomAmenityRepository>();
+builder.Services.AddScoped<IMeetingRoomRepository, MeetingRoomRepository>();
+builder.Services.AddScoped<IMeetingRoomBookingRepository, MeetingRoomBookingRepository>();
 
 // CORS
 builder.Services.AddCors(options =>
