@@ -36,4 +36,5 @@ public class ApplicationDbContext : DbContext
       public DbSet<MeetingRoomAmenity> MeetingRoomAmenities => Set<MeetingRoomAmenity>();
       public DbSet<MeetingRoomAmenityDetail> MeetingRoomAmenityDetails => Set<MeetingRoomAmenityDetail>();
       public DbSet<MeetingRoomBooking> MeetingRoomBookings => Set<MeetingRoomBooking>();
+      public DbSet<CompanyDocument> CompanyDocuments => Set<CompanyDocument>();
 }

@@ -133,6 +133,7 @@ public class MeetingRoomBookingService : IMeetingRoomBookingService
                 Data = bookings.Select(b => ToResponse(b, requester.Id, false)).ToList()
             };
         }
+        
         catch (Exception ex)
         {
             return new ApiResponse<List<MeetingRoomBookingResponse>>

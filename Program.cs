@@ -47,6 +47,7 @@ builder.Services.AddScoped<IFloorService, FloorService>();
 builder.Services.AddScoped<IMeetingRoomAmenityService, MeetingRoomAmenityService>();
 builder.Services.AddScoped<IMeetingRoomService, MeetingRoomService>();
 builder.Services.AddScoped<IMeetingRoomBookingService, MeetingRoomBookingService>();
+builder.Services.AddScoped<ICompanyDocumentService, CompanyDocumentService>();
 
 // Repositories
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
@@ -69,6 +70,7 @@ builder.Services.AddScoped<IFloorRepository, FloorRepository>();
 builder.Services.AddScoped<IMeetingRoomAmenityRepository, MeetingRoomAmenityRepository>();
 builder.Services.AddScoped<IMeetingRoomRepository, MeetingRoomRepository>();
 builder.Services.AddScoped<IMeetingRoomBookingRepository, MeetingRoomBookingRepository>();
+builder.Services.AddScoped<ICompanyDocumentRepository, CompanyDocumentRepository>();
 
 // CORS
 builder.Services.AddCors(options =>
