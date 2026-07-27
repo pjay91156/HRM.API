@@ -75,6 +75,20 @@ public class RegularizeAttendanceController : ControllerBase
         }
    
 
+[HttpGet("my-requests")]
+public async Task<IActionResult> GetMyRequests()
+{
+    var userId = User.GetUserId();
+
+    var response = await _regularizeAttendanceService
+        .GetMyRequestsAsync(userId);
+
+    if (!response.Success)
+        return BadRequest(response);
+
+    return Ok(response);
+}
+
 [HttpGet("manager/requests")]
 public async Task<IActionResult> GetRequests()
 {

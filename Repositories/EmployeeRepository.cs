@@ -73,6 +73,10 @@ public class EmployeeRepository : IEmployeeRepository
                 Email = e.User.Email,
                 DepartmentName = e.Department.DepartmentName,
                 DesignationName = e.Designation.DesignationName,
+                DepartmentId = e.DepartmentId,
+                DesignationId = e.DesignationId,
+                ManagerId = e.ManagerId,
+                Phone = e.PhoneNumber,
                 JoiningDate = e.JoiningDate,
                 IsActive = e.IsActive,
                 Role = e.User.Role.ToString()
@@ -97,6 +101,10 @@ public class EmployeeRepository : IEmployeeRepository
                 Email = e.User.Email,
                 DepartmentName = e.Department.DepartmentName,
                 DesignationName = e.Designation.DesignationName,
+                DepartmentId = e.DepartmentId,
+                DesignationId = e.DesignationId,
+                ManagerId = e.ManagerId,
+                Phone = e.PhoneNumber,
                 JoiningDate = e.JoiningDate,
                 IsActive = e.IsActive,
                 Role = e.User.Role.ToString()

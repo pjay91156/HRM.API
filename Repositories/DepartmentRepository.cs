@@ -8,6 +8,8 @@ public interface IDepartmentRepository
     Task<List<DepartmentResponse>> GetDepartmentsByCompanyIdAsync(Guid companyId);
     Task AddDepartmnetAsync(Department department);
     Task<bool> DeleteDepartmentAsync(Guid deparmentId);
+    Task<Department?> GetByIdAsync(Guid id);
+    Task SaveChangesAsync();
 }
 public class DepartmentRepository : IDepartmentRepository
 {
@@ -49,6 +51,17 @@ public class DepartmentRepository : IDepartmentRepository
     public async Task AddDepartmnetAsync(Department department)
     {
         await _context.Departments.AddAsync(department);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<Department?> GetByIdAsync(Guid id)
+    {
+        return await _context.Departments
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    public async Task SaveChangesAsync()
+    {
         await _context.SaveChangesAsync();
     }
 }

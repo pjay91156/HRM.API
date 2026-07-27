@@ -1,7 +1,9 @@
+using HRM.API.Data;
 using HRM.API.Repositories;
 using HRM.API.Responses;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace HRM.API.Services;
 
@@ -10,6 +12,8 @@ public interface IProfileService
     Task<ApiResponse<MyProfileResponse>> GetMyProfileAsync(Guid userId);
     Task<ApiResponse<MyProfileResponse>> UpdateMyProfileAsync(Guid userId, UpdateMyProfileDto request);
     Task<ApiResponse<MyProfileResponse>> UpdateMyProfilePictureAsync(Guid userId, IFormFile file);
+    Task<ApiResponse<string>> ChangePasswordAsync(Guid userId, ChangePasswordDto request);
+    Task<ApiResponse<MyProfileResponse>> UpdateTwoFactorPreferenceAsync(Guid userId, UpdateTwoFactorPreferenceDto request);
 }
 
 public class ProfileService : IProfileService
@@ -19,11 +23,16 @@ public class ProfileService : IProfileService
 
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly ApplicationDbContext _context;
 
-    public ProfileService(IEmployeeRepository employeeRepository, IWebHostEnvironment webHostEnvironment)
+    public ProfileService(
+        IEmployeeRepository employeeRepository,
+        IWebHostEnvironment webHostEnvironment,
+        ApplicationDbContext context)
     {
         _employeeRepository = employeeRepository;
         _webHostEnvironment = webHostEnvironment;
+        _context = context;
     }
 
     private static MyProfileResponse MapProfile(Models.Employee employee)
@@ -45,7 +54,9 @@ public class ProfileService : IProfileService
             ManagerName = employee.Manager == null
                 ? null
                 : $"{employee.Manager.User.FirstName} {employee.Manager.User.LastName}",
-            CompanyName = employee.User.Company.CompanyName
+            CompanyName = employee.User.Company.CompanyName,
+            TwoFactorEnabled = employee.User.TwoFactorEnabled,
+            TwoFactorMandatory = employee.User.Company.TwoFactorMandatory
         };
     }
 
@@ -199,6 +210,111 @@ public class ProfileService : IProfileService
             {
                 Success = false,
                 Message = "Error while updating profile picture.",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
+
+    public async Task<ApiResponse<string>> ChangePasswordAsync(Guid userId, ChangePasswordDto request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
+            {
+                return new ApiResponse<string> { Success = false, Message = "New password must be at least 6 characters." };
+            }
+
+            var employee = await _employeeRepository.GetProfileByUserIdAsync(userId);
+
+            if (employee == null)
+            {
+                return new ApiResponse<string> { Success = false, Message = "Employee profile not found." };
+            }
+
+            var currentPasswordValid = BCrypt.Net.BCrypt.Verify(
+                request.CurrentPassword,
+                employee.User.PasswordHash);
+
+            if (!currentPasswordValid)
+            {
+                return new ApiResponse<string> { Success = false, Message = "Current password is incorrect." };
+            }
+
+            if (request.CurrentPassword == request.NewPassword)
+            {
+                return new ApiResponse<string> { Success = false, Message = "New password must be different from the current password." };
+            }
+
+            employee.User.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            employee.User.UpdatedAt = DateTime.UtcNow;
+            employee.User.UpdatedBy = userId;
+
+            // Force re-login on other devices/sessions after a password change.
+            var activeRefreshTokens = await _context.RefreshTokens
+                .Where(x => x.UserId == userId && x.RevokedAt == null)
+                .ToListAsync();
+
+            foreach (var refreshToken in activeRefreshTokens)
+            {
+                refreshToken.RevokedAt = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return new ApiResponse<string> { Success = true, Message = "Password changed successfully." };
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<string>
+            {
+                Success = false,
+                Message = "Error while changing password.",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
+
+    public async Task<ApiResponse<MyProfileResponse>> UpdateTwoFactorPreferenceAsync(Guid userId, UpdateTwoFactorPreferenceDto request)
+    {
+        try
+        {
+            var employee = await _employeeRepository.GetProfileByUserIdAsync(userId);
+
+            if (employee == null)
+            {
+                return new ApiResponse<MyProfileResponse> { Success = false, Message = "Employee profile not found." };
+            }
+
+            if (!request.Enabled && employee.User.Company.TwoFactorMandatory)
+            {
+                return new ApiResponse<MyProfileResponse>
+                {
+                    Success = false,
+                    Message = "Two-step verification is mandatory for your company and cannot be disabled."
+                };
+            }
+
+            employee.User.TwoFactorEnabled = request.Enabled;
+            employee.User.UpdatedAt = DateTime.UtcNow;
+            employee.User.UpdatedBy = userId;
+
+            await _employeeRepository.SaveChangesAsync();
+
+            return new ApiResponse<MyProfileResponse>
+            {
+                Success = true,
+                Message = request.Enabled
+                    ? "Two-step verification has been enabled."
+                    : "Two-step verification has been disabled.",
+                Data = MapProfile(employee)
+            };
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<MyProfileResponse>
+            {
+                Success = false,
+                Message = "Error while updating two-step verification preference.",
                 Errors = new List<string> { ex.Message }
             };
         }

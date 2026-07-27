@@ -26,6 +26,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IDesignationService, DesignationService>();
@@ -48,6 +49,7 @@ builder.Services.AddScoped<IMeetingRoomAmenityService, MeetingRoomAmenityService
 builder.Services.AddScoped<IMeetingRoomService, MeetingRoomService>();
 builder.Services.AddScoped<IMeetingRoomBookingService, MeetingRoomBookingService>();
 builder.Services.AddScoped<ICompanyDocumentService, CompanyDocumentService>();
+builder.Services.AddScoped<ICompanyService, CompanyService>();
 
 // Repositories
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
@@ -71,6 +73,7 @@ builder.Services.AddScoped<IMeetingRoomAmenityRepository, MeetingRoomAmenityRepo
 builder.Services.AddScoped<IMeetingRoomRepository, MeetingRoomRepository>();
 builder.Services.AddScoped<IMeetingRoomBookingRepository, MeetingRoomBookingRepository>();
 builder.Services.AddScoped<ICompanyDocumentRepository, CompanyDocumentRepository>();
+builder.Services.AddScoped<ICompanyRepository, CompanyRepository>();
 
 // CORS
 builder.Services.AddCors(options =>

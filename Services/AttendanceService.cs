@@ -34,11 +34,16 @@ public class AttendanceService : IAttendanceService
 {
     private readonly IAttendanceRepository _attendanceRepository;
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly ILeaveRequestRepository _leaveRequestRepository;
 
-    public AttendanceService(IAttendanceRepository attendanceRepository, IEmployeeRepository employeeRepository)
+    public AttendanceService(
+        IAttendanceRepository attendanceRepository,
+        IEmployeeRepository employeeRepository,
+        ILeaveRequestRepository leaveRequestRepository)
     {
         _attendanceRepository = attendanceRepository;
         _employeeRepository = employeeRepository;
+        _leaveRequestRepository = leaveRequestRepository;
     }
     public async Task<ApiResponse<TodayAttendanceResponse>>
     GetTodayAttendanceAsync(Guid userId, DateTime attendanceDate)
@@ -48,6 +53,10 @@ public class AttendanceService : IAttendanceService
             bool isToday = attendanceDate.Date == DateTime.UtcNow.Date;
 
             var employee = await _employeeRepository.GetByUserIdAsync(userId);
+
+            var isOnLeave = await _leaveRequestRepository
+                .HasApprovedLeaveAsync(employee.Id, attendanceDate);
+
             var attendance =
                 await _attendanceRepository
                     .GetAttendanceByDateAsync(employee.Id, attendanceDate);
@@ -61,8 +70,9 @@ public class AttendanceService : IAttendanceService
                     Data = new TodayAttendanceResponse
                     {
                         AttendanceDate = attendanceDate.Date,
-                        CanCheckIn = isToday,
+                        CanCheckIn = isToday && !isOnLeave,
                         CanCheckOut = false,
+                        IsOnLeave = isOnLeave,
                         TotalWorkingHours = 0,
                         Sessions = new List<AttendanceSessionResponse>()
                     }
@@ -84,9 +94,11 @@ public class AttendanceService : IAttendanceService
                     TotalWorkingHours =
                         attendance.TotalWorkingHours,
 
-                    CanCheckIn = isToday && !hasOpenSession,
+                    CanCheckIn = isToday && !hasOpenSession && !isOnLeave,
 
-                    CanCheckOut = isToday && hasOpenSession,
+                    CanCheckOut = isToday && hasOpenSession && !isOnLeave,
+
+                    IsOnLeave = isOnLeave,
 
                     Sessions = sessions.Select(x =>
                         new AttendanceSessionResponse
@@ -244,6 +256,19 @@ public class AttendanceService : IAttendanceService
         try
         {
             var employee = await _employeeRepository.GetByUserIdAsync(userId);
+
+            var isOnLeave = await _leaveRequestRepository
+                .HasApprovedLeaveAsync(employee.Id, DateTime.UtcNow.Date);
+
+            if (isOnLeave)
+            {
+                return new ApiResponse<string>
+                {
+                    Success = false,
+                    Message = "You are on approved leave today. Check-in/out is not allowed."
+                };
+            }
+
             var session =
                 await _attendanceRepository
                     .GetOpenSessionAsync(
@@ -321,6 +346,19 @@ public class AttendanceService : IAttendanceService
         try
         {
             var employee = await _employeeRepository.GetByUserIdAsync(userId);
+
+            var isOnLeave = await _leaveRequestRepository
+                .HasApprovedLeaveAsync(employee.Id, DateTime.UtcNow.Date);
+
+            if (isOnLeave)
+            {
+                return new ApiResponse<string>
+                {
+                    Success = false,
+                    Message = "You are on approved leave today. Check-in/out is not allowed."
+                };
+            }
+
             var openSession =
                 await _attendanceRepository
                     .GetOpenSessionAsync(
@@ -400,7 +438,16 @@ public class AttendanceService : IAttendanceService
     public async Task<WeeklyAttendanceSummaryResponse> GetWeeklySummaryAsync(Guid userId, DateTime attendanceDate)
     {
         var employee = await _employeeRepository.GetByUserIdAsync(userId);
-        return await _attendanceRepository.GetWeeklySummaryAsync(employee.Id, attendanceDate);
+
+        var summary = await _attendanceRepository.GetWeeklySummaryAsync(employee.Id, attendanceDate);
+
+        foreach (var day in summary.Days)
+        {
+            day.IsOnLeave = await _leaveRequestRepository
+                .HasApprovedLeaveAsync(employee.Id, day.Date);
+        }
+
+        return summary;
     }
     public async Task<ApiResponse<TeamAttendanceSummaryResponse>>
 GetTeamAttendanceSummaryAsync(Guid userId, DateTime attendanceDate, Guid companyId)

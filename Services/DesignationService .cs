@@ -7,6 +7,7 @@ public interface IDesignationService
 {
     Task<ApiResponse<IEnumerable<DesignationResponse>>> GetDesignationsByDepartmentIdAsync(Guid departmentId);
     Task<ApiResponse<Guid?>> AddDesignationAsync(DesignationDto request,Guid userId);
+    Task<ApiResponse<bool>> UpdateDesignationAsync(UpdateDesignationDto request, Guid userId);
     Task<ApiResponse<IEnumerable<DesignationResponse>>> GetDesignationsAsync();
     Task<ApiResponse<object>> DeleteDesignationAsync(Guid designationId, Guid userId);
 }
@@ -66,6 +67,34 @@ public class DesignationService : IDesignationService
             Data = null
         };
     }
+}
+  public async Task<ApiResponse<bool>> UpdateDesignationAsync(UpdateDesignationDto request, Guid userId)
+{
+    var designation = await _designationRepository.GetByIdAsync(request.Id);
+
+    if (designation == null)
+    {
+        return new ApiResponse<bool>
+        {
+            Success = false,
+            Message = "Designation not found.",
+            Data = false
+        };
+    }
+
+    designation.DesignationName = request.Name;
+    designation.DepartmentId = request.DepartmentId;
+    designation.UpdatedBy = userId;
+    designation.UpdatedAt = DateTime.UtcNow;
+
+    await _designationRepository.SaveChangesAsync();
+
+    return new ApiResponse<bool>
+    {
+        Success = true,
+        Message = "Designation updated successfully.",
+        Data = true
+    };
 }
   public async Task<ApiResponse<IEnumerable<DesignationResponse>>> GetDesignationsAsync()
     {

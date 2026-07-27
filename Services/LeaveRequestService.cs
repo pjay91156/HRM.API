@@ -108,7 +108,19 @@ public class LeaveRequestService : ILeaveRequestService
             decimal totalDays =
                 request.LeaveDuration == LeaveDuration.HalfDay
                 ? 0.5m
-                : (request.ToDate.Date - request.FromDate.Date).Days + 1;
+                : CalculateWorkingDays(request.FromDate.Date, request.ToDate.Date);
+
+            var balances = await _leaveRequestRepository.GetLeaveBalanceAsync(employee.Id);
+            var balance = balances.FirstOrDefault(x => x.LeaveTypeId == request.LeaveTypeId);
+
+            if (balance != null && totalDays > balance.RemainingDays)
+            {
+                return new ApiResponse<string>
+                {
+                    Success = false,
+                    Message = $"Insufficient leave balance. You have {balance.RemainingDays} day(s) remaining for this leave type."
+                };
+            }
 
             var leaveRequest = new LeaveRequest
             {
@@ -417,6 +429,21 @@ public class LeaveRequestService : ILeaveRequestService
                 Errors = new List<string> { ex.Message }
             };
         }
+    }
+
+    private static decimal CalculateWorkingDays(DateTime fromDate, DateTime toDate)
+    {
+        decimal days = 0;
+
+        for (var date = fromDate; date <= toDate; date = date.AddDays(1))
+        {
+            if (date.DayOfWeek != DayOfWeek.Saturday && date.DayOfWeek != DayOfWeek.Sunday)
+            {
+                days++;
+            }
+        }
+
+        return days;
     }
 
     public async Task<ApiResponse<string>> CancelLeaveAsync(

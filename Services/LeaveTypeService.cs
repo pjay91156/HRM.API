@@ -12,6 +12,10 @@ public interface ILeaveTypeService
         LeaveTypeDto request,
         Guid userId);
 
+    Task<ApiResponse<bool>> UpdateLeaveTypeAsync(
+        UpdateLeaveTypeDto request,
+        Guid userId);
+
     Task<ApiResponse<bool>> DeleteLeaveTypeAsync(
         Guid leaveTypeId);
 }
@@ -64,6 +68,39 @@ public class LeaveTypeService : ILeaveTypeService
             Success = true,
             Message = "Leave type added successfully.",
             Data = leaveType.Id.ToString()
+        };
+    }
+
+    public async Task<ApiResponse<bool>> UpdateLeaveTypeAsync(
+        UpdateLeaveTypeDto request,
+        Guid userId)
+    {
+        var leaveType = await _leaveTypeRepository.GetByIdAsync(request.Id);
+
+        if (leaveType == null)
+        {
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Leave type not found.",
+                Data = false
+            };
+        }
+
+        leaveType.LeaveName = request.LeaveName;
+        leaveType.LeaveCode = request.LeaveCode;
+        leaveType.Description = request.Description;
+        leaveType.DefaultDays = request.DefaultDays;
+        leaveType.UpdatedAt = DateTime.UtcNow;
+        leaveType.UpdatedBy = userId;
+
+        await _leaveTypeRepository.SaveChangesAsync();
+
+        return new ApiResponse<bool>
+        {
+            Success = true,
+            Message = "Leave type updated successfully.",
+            Data = true
         };
     }
 

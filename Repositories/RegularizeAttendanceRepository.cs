@@ -15,8 +15,10 @@ public interface IRegularizeAttendanceRepository
         RegularizationRequest request,
         Guid userId);
     Task<List<ManagerPendingRegularizationResponse>> GetPendingRequestsAsync(Guid managerId);
+    Task<List<ManagerPendingRegularizationResponse>> GetMyRequestsAsync(Guid employeeId);
     Task<RegularizationDetailsResponseDto?> GetRegularizationDetailsAsync(Guid managerId, Guid attendanceId, Guid employeeId);
     Task<bool> ApproveRejectRegularizationAsync(Guid approverId, RegularizationApprovalRequestDto request);
+    Task<bool> HasPendingOrApprovedRequestAsync(Guid attendanceId);
 }
 public class RegularizeAttendanceRepository : IRegularizeAttendanceRepository
 {
@@ -187,6 +189,75 @@ change.ChangeType.Equals("add",
             .ToList();
 
         return requests;
+    }
+
+    public async Task<List<ManagerPendingRegularizationResponse>> GetMyRequestsAsync(Guid employeeId)
+    {
+        var regularizations = await _context.AttendanceRegularizations
+            .AsNoTracking()
+            .Where(x =>
+                x.IsActive &&
+                x.Attendance.EmployeeId == employeeId)
+            .Select(x => new
+            {
+                x.AttendanceId,
+                EmployeeId = x.Attendance.EmployeeId,
+                EmployeeCode = x.Attendance.Employee.EmployeeCode,
+                EmployeeName = x.Attendance.Employee.User.FirstName + " " +
+                               x.Attendance.Employee.User.LastName,
+                x.Attendance.AttendanceDate,
+                x.CreatedAt,
+                x.Reason,
+                x.Status,
+                x.ChangeType
+            })
+            .ToListAsync();
+
+        var requests = regularizations
+            .GroupBy(x => new
+            {
+                x.AttendanceId,
+                x.EmployeeId,
+                x.EmployeeCode,
+                x.EmployeeName,
+                x.AttendanceDate
+            })
+            .Select(g => new ManagerPendingRegularizationResponse
+            {
+                AttendanceId = g.Key.AttendanceId,
+                EmployeeId = g.Key.EmployeeId,
+                EmployeeCode = g.Key.EmployeeCode,
+                EmployeeName = g.Key.EmployeeName,
+                AttendanceDate = DateOnly.FromDateTime(g.Key.AttendanceDate),
+
+                RequestedOn = g.Max(x => x.CreatedAt),
+
+                Reason = g.First().Reason,
+
+                TotalChanges = g.Count(),
+
+                ChangeTypes = string.Join(", ",
+                    g.Select(x => (AttendanceRegularizationChangeType)x.ChangeType)
+                     .Distinct()
+                     .Select(x => x.ToString())),
+
+                Status = ((AttendanceRegularizationStatus)g.First().Status).ToString()
+            })
+            .OrderByDescending(x => x.RequestedOn)
+            .ToList();
+
+        return requests;
+    }
+
+    public async Task<bool> HasPendingOrApprovedRequestAsync(Guid attendanceId)
+    {
+        return await _context.AttendanceRegularizations
+            .AsNoTracking()
+            .AnyAsync(x =>
+                x.AttendanceId == attendanceId &&
+                x.IsActive &&
+                (x.Status == (int)AttendanceRegularizationStatus.Pending ||
+                 x.Status == (int)AttendanceRegularizationStatus.Approved));
     }
 
     public async Task<RegularizationDetailsResponseDto?> GetRegularizationDetailsAsync(Guid managerId, Guid attendanceId, Guid employeeId)

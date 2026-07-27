@@ -31,6 +31,8 @@ public class ApplicationDbContext : DbContext
       public DbSet<EmployeePerformanceReview> EmployeePerformanceReviews => Set<EmployeePerformanceReview>();
       public DbSet<EmployeePerformanceSkillReview> EmployeePerformanceSkillReviews => Set<EmployeePerformanceSkillReview>();
       public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+      public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+      public DbSet<LoginOtp> LoginOtps => Set<LoginOtp>();
       public DbSet<Floor> Floors => Set<Floor>();
       public DbSet<MeetingRoom> MeetingRooms => Set<MeetingRoom>();
       public DbSet<MeetingRoomAmenity> MeetingRoomAmenities => Set<MeetingRoomAmenity>();

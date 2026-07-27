@@ -14,6 +14,7 @@ public interface IRegularizeAttendanceService
     RegularizationRequest request,
     Guid userId);
     Task<ApiResponse<List<ManagerPendingRegularizationResponse>>> GetPendingRequestsAsync(Guid userId);
+    Task<ApiResponse<List<ManagerPendingRegularizationResponse>>> GetMyRequestsAsync(Guid userId);
     Task<ApiResponse<RegularizationDetailsResponseDto>> GetRegularizationDetailsAsync(Guid managerId, Guid attendanceId, Guid employeeId);
     Task<ApiResponse<object>> ApproveRejectRegularizationAsync(Guid approverId, RegularizationApprovalRequestDto request);
 }
@@ -104,6 +105,16 @@ public class RegularizeAttendanceService : IRegularizeAttendanceService
             return response;
         }
 
+        var hasExistingRequest = await _regularizeAttendanceRepository
+            .HasPendingOrApprovedRequestAsync(request.AttendanceId);
+
+        if (hasExistingRequest)
+        {
+            response.Success = false;
+            response.Message = "You already have a regularization request for this date.";
+            return response;
+        }
+
         var result = await _regularizeAttendanceRepository
             .CreateRegularizationRequestAsync(request, userId);
 
@@ -185,6 +196,44 @@ public async Task<ApiResponse<List<ManagerPendingRegularizationResponse>>> GetPe
         {
             ex.Message
             // In production, you may prefer a generic error message instead of exposing ex.Message.
+        };
+
+        return response;
+    }
+}
+
+public async Task<ApiResponse<List<ManagerPendingRegularizationResponse>>> GetMyRequestsAsync(Guid userId)
+{
+    var response = new ApiResponse<List<ManagerPendingRegularizationResponse>>();
+
+    try
+    {
+        var employee = await _employeeRepository.GetByUserIdAsync(userId);
+        if (employee == null)
+        {
+            response.Success = false;
+            response.Message = "Employee not found for the given user ID.";
+            return response;
+        }
+        var requests = await _regularizeAttendanceRepository
+            .GetMyRequestsAsync(employee.Id);
+
+        response.Success = true;
+        response.Message = requests.Any()
+            ? "Regularization requests retrieved successfully."
+            : "No regularization requests found.";
+
+        response.Data = requests;
+
+        return response;
+    }
+    catch (Exception ex)
+    {
+        response.Success = false;
+        response.Message = "Failed to retrieve regularization requests.";
+        response.Errors = new List<string>
+        {
+            ex.Message
         };
 
         return response;

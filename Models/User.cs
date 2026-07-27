@@ -35,6 +35,9 @@ public class User : BaseEntity
     [Column("role")]
     public UserRole Role { get; set; } = UserRole.Employee;
 
+    [Column("two_factor_enabled")]
+    public bool TwoFactorEnabled { get; set; }
+
     public virtual ICollection<Employee> Employees { get; set; }
         = new List<Employee>();
 }

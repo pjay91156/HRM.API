@@ -6,6 +6,7 @@ public interface IDepartmentService
 {
     Task<List<DepartmentResponse>> GetDepartmentsByCompanyIdAsync(Guid companyId);
     Task<ApiResponse<string>> AddDepartmentAsync(DepartmentDto request,Guid companyId,Guid userId);
+    Task<ApiResponse<bool>> UpdateDepartmentAsync(UpdateDepartmentDto request, Guid userId);
     Task<ApiResponse<bool>> DeleteDepartmentAsync(Guid departmentId);
 }
 public class DepartmentService : IDepartmentService
@@ -42,6 +43,34 @@ public class DepartmentService : IDepartmentService
             Data = department.Id.ToString()
         };
     }
+    public async Task<ApiResponse<bool>> UpdateDepartmentAsync(UpdateDepartmentDto request, Guid userId)
+    {
+        var department = await _departmentRepository.GetByIdAsync(request.Id);
+
+        if (department == null)
+        {
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Department not found.",
+                Data = false
+            };
+        }
+
+        department.DepartmentName = request.DepartmentName;
+        department.UpdatedAt = DateTime.UtcNow;
+        department.UpdatedBy = userId;
+
+        await _departmentRepository.SaveChangesAsync();
+
+        return new ApiResponse<bool>
+        {
+            Success = true,
+            Message = "Department updated successfully.",
+            Data = true
+        };
+    }
+
     public async Task<ApiResponse<bool>> DeleteDepartmentAsync(Guid departmentId)
     {
         var deleted = await _departmentRepository.DeleteDepartmentAsync(departmentId);

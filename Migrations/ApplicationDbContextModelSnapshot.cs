@@ -205,10 +205,34 @@ namespace HRM.API.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("id");
 
+                    b.Property<string>("AddressLine1")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("address_line1");
+
+                    b.Property<string>("AddressLine2")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("address_line2");
+
+                    b.Property<string>("CinNumber")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("cin_number");
+
+                    b.Property<string>("City")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("city");
+
                     b.Property<string>("CompanyName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("company_name");
+
+                    b.Property<string>("CompanyType")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("company_type");
+
+                    b.Property<string>("Country")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("country");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2")
@@ -218,14 +242,90 @@ namespace HRM.API.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("created_by");
 
+                    b.Property<string>("Currency")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("currency");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("description");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("email");
 
+                    b.Property<string>("FinancialYearEnd")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("financial_year_end");
+
+                    b.Property<string>("FinancialYearStart")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("financial_year_start");
+
+                    b.Property<string>("GstNumber")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("gst_number");
+
+                    b.Property<string>("HrEmail")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("hr_email");
+
+                    b.Property<string>("Industry")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("industry");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit")
                         .HasColumnName("is_active");
+
+                    b.Property<string>("LegalCompanyName")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("legal_company_name");
+
+                    b.Property<string>("LogoUrl")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("logo_url");
+
+                    b.Property<TimeOnly?>("OfficeEndTime")
+                        .HasColumnType("time")
+                        .HasColumnName("office_end_time");
+
+                    b.Property<TimeOnly?>("OfficeStartTime")
+                        .HasColumnType("time")
+                        .HasColumnName("office_start_time");
+
+                    b.Property<string>("PanNumber")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("pan_number");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("phone_number");
+
+                    b.Property<string>("Pincode")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("pincode");
+
+                    b.Property<string>("RegistrationNumber")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("registration_number");
+
+                    b.Property<string>("State")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("state");
+
+                    b.Property<string>("TanNumber")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("tan_number");
+
+                    b.Property<string>("TimeZone")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("time_zone");
+
+                    b.Property<bool>("TwoFactorMandatory")
+                        .HasColumnType("bit")
+                        .HasColumnName("two_factor_mandatory");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2")
@@ -234,6 +334,18 @@ namespace HRM.API.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("updated_by");
+
+                    b.Property<string>("Website")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("website");
+
+                    b.Property<string>("WorkingDays")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("working_days");
+
+                    b.Property<int?>("YearEstablished")
+                        .HasColumnType("int")
+                        .HasColumnName("year_established");
 
                     b.HasKey("Id");
 
@@ -784,6 +896,52 @@ namespace HRM.API.Migrations
                     b.ToTable("leave_type", "hrm");
                 });
 
+            modelBuilder.Entity("HRM.API.Models.LoginOtp", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("int")
+                        .HasColumnName("attempt_count");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("code_hash");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("used_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("login_otp", "hrm");
+                });
+
             modelBuilder.Entity("HRM.API.Models.MeetingRoom", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1055,6 +1213,42 @@ namespace HRM.API.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("notification", "hrm");
+                });
+
+            modelBuilder.Entity("HRM.API.Models.PasswordResetToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("used_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("password_reset_token", "hrm");
                 });
 
             modelBuilder.Entity("HRM.API.Models.PerformanceCategory", b =>
@@ -1419,6 +1613,10 @@ namespace HRM.API.Migrations
                         .HasColumnType("int")
                         .HasColumnName("role");
 
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit")
+                        .HasColumnName("two_factor_enabled");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2")
                         .HasColumnName("updated_at");
@@ -1577,6 +1775,17 @@ namespace HRM.API.Migrations
                     b.Navigation("PerformanceSkill");
                 });
 
+            modelBuilder.Entity("HRM.API.Models.LoginOtp", b =>
+                {
+                    b.HasOne("HRM.API.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("HRM.API.Models.MeetingRoom", b =>
                 {
                     b.HasOne("HRM.API.Models.Floor", "Floor")
@@ -1627,6 +1836,17 @@ namespace HRM.API.Migrations
                 });
 
             modelBuilder.Entity("HRM.API.Models.Notification", b =>
+                {
+                    b.HasOne("HRM.API.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("HRM.API.Models.PasswordResetToken", b =>
                 {
                     b.HasOne("HRM.API.Models.User", "User")
                         .WithMany()

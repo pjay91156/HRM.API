@@ -58,6 +58,32 @@ public class DepartmentController : ControllerBase
                 });
         }
     }
+    [HttpPut("department")]
+    public async Task<IActionResult> UpdateDepartment([FromBody] UpdateDepartmentDto request)
+    {
+        try
+        {
+            var userId = User.GetUserId();
+
+            var response = await _departmentService.UpdateDepartmentAsync(request, userId);
+
+            if (!response.Success)
+                return BadRequest(response);
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = ex.Message,
+                    Data = false
+                });
+        }
+    }
+
     [HttpDelete("department/{departmentId:guid}")]
     public async Task<IActionResult> DeleteEmployee(Guid departmentId)
     {

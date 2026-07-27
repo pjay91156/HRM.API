@@ -60,6 +60,33 @@ public class DesignationController : ControllerBase
                 });
         }
     }
+    [HttpPut("designation")]
+    public async Task<IActionResult> UpdateDesignation([FromBody] UpdateDesignationDto request)
+    {
+        try
+        {
+            var userId = User.GetUserId();
+            var response = await _designationService.UpdateDesignationAsync(request, userId);
+
+            if (response.Success)
+            {
+                return Ok(response);
+            }
+
+            return BadRequest(response);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = ex.Message,
+                    Data = false
+                });
+        }
+    }
+
     [HttpDelete("designation/{id}")]
     public async Task<IActionResult> DeleteDesignation(Guid id)
     {

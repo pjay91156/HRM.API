@@ -29,4 +29,8 @@ public class MyProfileResponse
     public string? ManagerName { get; set; }
 
     public string CompanyName { get; set; } = string.Empty;
+
+    public bool TwoFactorEnabled { get; set; }
+
+    public bool TwoFactorMandatory { get; set; }
 }

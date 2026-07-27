@@ -18,6 +18,7 @@ public interface ILeaveRequestRepository
     Task<List<TeamLeaveCalendarResponse>> GetTeamLeaveCalendarAsync(Guid managerId);
     Task<bool> HasOverlappingRequestAsync(Guid employeeId, DateTime fromDate, DateTime toDate);
     Task<List<LeaveBalanceResponse>> GetLeaveBalanceAsync(Guid employeeId);
+    Task<bool> HasApprovedLeaveAsync(Guid employeeId, DateTime date);
 
 }
 public class LeaveRequestRepository : ILeaveRequestRepository
@@ -201,7 +202,7 @@ public class LeaveRequestRepository : ILeaveRequestRepository
             .Where(x =>
                 x.EmployeeId == employeeId &&
                 x.IsActive &&
-                x.Status == LeaveStatus.Approved)
+                (x.Status == LeaveStatus.Approved || x.Status == LeaveStatus.Pending))
             .GroupBy(x => x.LeaveTypeId)
             .Select(g => new { LeaveTypeId = g.Key, UsedDays = g.Sum(x => x.TotalDays) })
             .ToListAsync();
@@ -225,6 +226,17 @@ public class LeaveRequestRepository : ILeaveRequestRepository
             .ToList();
     }
 
+
+    public async Task<bool> HasApprovedLeaveAsync(Guid employeeId, DateTime date)
+    {
+        return await _context.LeaveRequests
+            .AnyAsync(x =>
+                x.EmployeeId == employeeId &&
+                x.IsActive &&
+                x.Status == LeaveStatus.Approved &&
+                x.FromDate.Date <= date.Date &&
+                x.ToDate.Date >= date.Date);
+    }
 
     public async Task UpdateAsync(LeaveRequest leaveRequest)
     {

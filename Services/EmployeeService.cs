@@ -10,6 +10,7 @@ public interface IEmployeeService
     Task<ApiResponse<List<EmployeeResponse>>> GetEmployeesAsync(Guid companyId);
     Task<ApiResponse<List<EmployeeResponse>>> GetEmployeesByDepartmentAsync(Guid companyId, Guid departmentId);
     Task<ApiResponse<string>> AddEmployeeAsync(EmployeeDto request, Guid companyId, Guid userId);
+    Task<ApiResponse<bool>> UpdateEmployeeAsync(UpdateEmployeeDto request, Guid userId);
     Task<ApiResponse<bool>> DeleteEmployeeAsync(Guid employeeId);
     Task<ApiResponse<EmployeeHierarchyResponse>> GetMyTeamHierarchyAsync(Guid userId, Guid companyId);
     Task<ApiResponse<string>> UpdateUserRoleAsync(Guid actingUserId, Guid targetEmployeeId, UserRole newRole);
@@ -148,6 +149,43 @@ public class EmployeeService : IEmployeeService
             Data = employee.Id.ToString()
         };
     }
+    public async Task<ApiResponse<bool>> UpdateEmployeeAsync(UpdateEmployeeDto request, Guid userId)
+    {
+        var employee = await _employeeRepository.GetByIdAsync(request.Id);
+
+        if (employee == null)
+        {
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Employee not found.",
+                Data = false
+            };
+        }
+
+        employee.User.FirstName = request.FirstName;
+        employee.User.LastName = request.LastName;
+        employee.User.Email = request.Email;
+        employee.User.UpdatedAt = DateTime.UtcNow;
+        employee.User.UpdatedBy = userId;
+
+        employee.PhoneNumber = request.Phone;
+        employee.DepartmentId = request.DepartmentId;
+        employee.DesignationId = request.DesignationId;
+        employee.ManagerId = request.ManagerId;
+        employee.UpdatedAt = DateTime.UtcNow;
+        employee.UpdatedBy = userId;
+
+        await _employeeRepository.SaveChangesAsync();
+
+        return new ApiResponse<bool>
+        {
+            Success = true,
+            Message = "Employee updated successfully.",
+            Data = true
+        };
+    }
+
     public async Task<ApiResponse<bool>> DeleteEmployeeAsync(Guid employeeId)
     {
         var deleted = await _employeeRepository.DeleteEmployeeAsync(employeeId);

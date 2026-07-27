@@ -49,6 +49,7 @@ public class AuthRepository : IAuthRepository
     {
         return await _context.Users
             .AsNoTracking()
+            .Include(x => x.Company)
             .FirstOrDefaultAsync(x => x.Email == email && x.IsActive);
     }
 }

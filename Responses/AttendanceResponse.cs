@@ -24,6 +24,8 @@ public class TodayAttendanceResponse
 
     public bool CanCheckOut { get; set; }
 
+    public bool IsOnLeave { get; set; }
+
     public List<AttendanceSessionResponse> Sessions
         { get; set; } = new();
 }
@@ -56,6 +58,8 @@ public class WeeklyAttendanceDayResponse
     public decimal WorkingHours { get; set; }
 
     public bool IsPresent { get; set; }
+
+    public bool IsOnLeave { get; set; }
 }
 public class TeamAttendanceSummaryResponse
 {

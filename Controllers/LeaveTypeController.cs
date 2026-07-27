@@ -43,6 +43,22 @@ public class LeaveTypeController : ControllerBase
         return Ok(response);
     }
 
+    [HttpPut]
+    public async Task<IActionResult> UpdateLeaveType(UpdateLeaveTypeDto request)
+    {
+        var userId = User.GetUserId();
+
+        var response =
+            await _leaveTypeService.UpdateLeaveTypeAsync(
+                request,
+                userId);
+
+        if (!response.Success)
+            return BadRequest(response);
+
+        return Ok(response);
+    }
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteLeaveType(Guid id)
     {

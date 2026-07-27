@@ -10,6 +10,8 @@ public interface ILeaveTypeRepository
 
     Task<bool> DeleteLeaveTypeAsync(Guid leaveTypeId);
 
+    Task<LeaveType?> GetByIdAsync(Guid id);
+
     Task SaveChangesAsync();
 }
 public class LeaveTypeRepository : ILeaveTypeRepository
@@ -55,6 +57,12 @@ public class LeaveTypeRepository : ILeaveTypeRepository
         leaveType.IsActive = false;
 
         return true;
+    }
+
+    public async Task<LeaveType?> GetByIdAsync(Guid id)
+    {
+        return await _context.LeaveTypes
+            .FirstOrDefaultAsync(x => x.Id == id);
     }
 
     public async Task SaveChangesAsync()

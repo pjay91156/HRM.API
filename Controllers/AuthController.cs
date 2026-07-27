@@ -42,7 +42,41 @@ public async Task<ActionResult<ApiResponse<LoginResponse>>> Login(
         return BadRequest(response);
     }
 
+    if (response.Data?.RequiresTwoFactor == true)
+    {
+        return Ok(response);
+    }
+
     SetRefreshTokenCookie(refreshToken!);
+
+    return Ok(response);
+}
+
+[HttpPost("verify-2fa")]
+public async Task<ActionResult<ApiResponse<LoginResponse>>> VerifyTwoFactor(
+    [FromBody] VerifyTwoFactorRequestDto request)
+{
+    var (response, refreshToken) = await _service.VerifyTwoFactorAsync(request);
+
+    if (!response.Success)
+    {
+        return BadRequest(response);
+    }
+
+    SetRefreshTokenCookie(refreshToken!);
+
+    return Ok(response);
+}
+
+[HttpPost("resend-2fa")]
+public async Task<IActionResult> ResendTwoFactor([FromBody] ResendTwoFactorRequestDto request)
+{
+    var response = await _service.ResendTwoFactorCodeAsync(request);
+
+    if (!response.Success)
+    {
+        return BadRequest(response);
+    }
 
     return Ok(response);
 }
@@ -61,6 +95,27 @@ public async Task<IActionResult> Refresh()
     }
 
     SetRefreshTokenCookie(newRefreshToken!);
+
+    return Ok(response);
+}
+
+[HttpPost("forgot-password")]
+public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
+{
+    var response = await _service.ForgotPasswordAsync(request);
+
+    return Ok(response);
+}
+
+[HttpPost("reset-password")]
+public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
+{
+    var response = await _service.ResetPasswordAsync(request);
+
+    if (!response.Success)
+    {
+        return BadRequest(response);
+    }
 
     return Ok(response);
 }

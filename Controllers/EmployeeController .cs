@@ -120,6 +120,32 @@ public class EmployeeController : ControllerBase
                 });
         }
     }
+    [HttpPut("employee")]
+    public async Task<IActionResult> UpdateEmployee([FromBody] UpdateEmployeeDto request)
+    {
+        try
+        {
+            var userId = User.GetUserId();
+
+            var response = await _employeeService.UpdateEmployeeAsync(request, userId);
+
+            if (!response.Success)
+                return BadRequest(response);
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = ex.Message,
+                    Data = false
+                });
+        }
+    }
+
     [HttpDelete("employee/{employeeId:guid}")]
     public async Task<IActionResult> DeleteEmployee(Guid employeeId)
     {

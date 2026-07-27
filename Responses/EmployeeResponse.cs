@@ -15,6 +15,14 @@ public class EmployeeResponse
 
     public string DesignationName { get; set; } = string.Empty;
 
+    public Guid DepartmentId { get; set; }
+
+    public Guid DesignationId { get; set; }
+
+    public Guid? ManagerId { get; set; }
+
+    public string? Phone { get; set; }
+
     public DateOnly JoiningDate { get; set; }
 
     public bool IsActive { get; set; }

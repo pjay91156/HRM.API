@@ -43,6 +43,32 @@ public class ProfileController : ControllerBase
         return Ok(response);
     }
 
+    [HttpPut("me/change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto request)
+    {
+        var userId = User.GetUserId();
+
+        var response = await _profileService.ChangePasswordAsync(userId, request);
+
+        if (!response.Success)
+            return BadRequest(response);
+
+        return Ok(response);
+    }
+
+    [HttpPut("me/two-factor")]
+    public async Task<IActionResult> UpdateTwoFactorPreference([FromBody] UpdateTwoFactorPreferenceDto request)
+    {
+        var userId = User.GetUserId();
+
+        var response = await _profileService.UpdateTwoFactorPreferenceAsync(userId, request);
+
+        if (!response.Success)
+            return BadRequest(response);
+
+        return Ok(response);
+    }
+
     [HttpPost("me/picture")]
     [RequestSizeLimit(2 * 1024 * 1024)]
     public async Task<IActionResult> UpdateMyProfilePicture([FromForm] IFormFile file)
