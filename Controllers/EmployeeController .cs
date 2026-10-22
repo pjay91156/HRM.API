@@ -107,6 +107,9 @@ public class EmployeeController : ControllerBase
                 companyId,
                 userId);
 
+            if (!response.Success)
+                return BadRequest(response);
+
             return Ok(response);
         }
         catch (Exception ex)
@@ -149,8 +152,9 @@ public class EmployeeController : ControllerBase
     [HttpDelete("employee/{employeeId:guid}")]
     public async Task<IActionResult> DeleteEmployee(Guid employeeId)
     {
+        var userId = User.GetUserId();
 
-        var response = await _employeeService.DeleteEmployeeAsync(employeeId);
+        var response = await _employeeService.DeleteEmployeeAsync(employeeId, userId);
 
         return Ok(response);
     }

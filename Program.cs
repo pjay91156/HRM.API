@@ -7,6 +7,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using HRM.API.AI.Services;
+using HRM.API.AI.Plugins;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+using HRM.API.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +55,19 @@ builder.Services.AddScoped<IMeetingRoomService, MeetingRoomService>();
 builder.Services.AddScoped<IMeetingRoomBookingService, MeetingRoomBookingService>();
 builder.Services.AddScoped<ICompanyDocumentService, CompanyDocumentService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
+builder.Services.AddScoped<IHolidayService, HolidayService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<ICourseModuleService, CourseModuleService>();
+builder.Services.AddScoped<IModuleQuizService, ModuleQuizService>();
+builder.Services.AddScoped<ILearningService, LearningService>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+builder.Services.AddScoped<LeavePlugin>();
+builder.Services.AddScoped<IAIService, AIService>();
 
 // Repositories
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
@@ -74,6 +92,16 @@ builder.Services.AddScoped<IMeetingRoomRepository, MeetingRoomRepository>();
 builder.Services.AddScoped<IMeetingRoomBookingRepository, MeetingRoomBookingRepository>();
 builder.Services.AddScoped<ICompanyDocumentRepository, CompanyDocumentRepository>();
 builder.Services.AddScoped<ICompanyRepository, CompanyRepository>();
+builder.Services.AddScoped<IHolidayRepository, HolidayRepository>();
+builder.Services.AddScoped<IEmployeeOptionalHolidaySelectionRepository, EmployeeOptionalHolidaySelectionRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+builder.Services.AddScoped<ICourseModuleRepository, CourseModuleRepository>();
+builder.Services.AddScoped<IModuleQuizRepository, ModuleQuizRepository>();
+builder.Services.AddScoped<ILearningRepository, LearningRepository>();
+
+builder.Services.AddSignalR();
+
 
 // CORS
 builder.Services.AddCors(options =>
@@ -109,9 +137,48 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(jwtSettings["Key"]!))
         };
+
+        // SignalR's JS client can't set the Authorization header on
+        // WebSocket/SSE upgrade requests, so it sends the access token
+        // via the "access_token" query string param instead. Without this,
+        // the hub connection is rejected with 401 after negotiate succeeds.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddSingleton<Kernel>(serviceProvider =>
+{
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+
+    var builder = Kernel.CreateBuilder();
+
+    builder.AddOpenAIChatCompletion(
+        modelId: configuration["OpenAI:Model"]!,
+        apiKey: configuration["OpenAI:ApiKey"]!);
+
+    return builder.Build();
+});
+builder.Services.AddSingleton<IChatCompletionService>(serviceProvider =>
+{
+    var kernel = serviceProvider.GetRequiredService<Kernel>();
+
+    return kernel.GetRequiredService<IChatCompletionService>();
+});
 
 var app = builder.Build();
 
@@ -127,7 +194,6 @@ if (app.Environment.IsDevelopment())
         options.Title = "HRM API";
     });
 }
-
 // Middleware
 app.UseCors("AllowReactApp");
 
@@ -143,5 +209,6 @@ app.UseAuthorization();
 
 // Controllers
 app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();

@@ -276,8 +276,10 @@ change.ChangeType.Equals("add",
             .Where(x =>
                 x.AttendanceId == attendanceId &&
                 x.Attendance.EmployeeId == employeeId &&
-                x.IsActive &&
-                x.Attendance.Employee.ManagerId == managerId)
+                x.IsActive
+                //  &&
+                // x.Attendance.Employee.ManagerId == managerId
+                )
             .OrderBy(x => x.CreatedAt)
             .ToListAsync();
 

@@ -1,3 +1,4 @@
+using HRM.API.Enums;
 using HRM.API.Models;
 using HRM.API.Repositories;
 using HRM.API.Responses;
@@ -18,13 +19,16 @@ public class EmployeePerformanceReviewService : IEmployeePerformanceReviewServic
 {
     private readonly IEmployeePerformanceReviewRepository _repository;
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly IAuditLogService _auditLogService;
 
     public EmployeePerformanceReviewService(
         IEmployeePerformanceReviewRepository repository,
-        IEmployeeRepository employeeRepository)
+        IEmployeeRepository employeeRepository,
+        IAuditLogService auditLogService)
     {
         _repository = repository;
         _employeeRepository = employeeRepository;
+        _auditLogService = auditLogService;
     }
 
     private static string GetStatusLabel(byte status) => status switch
@@ -239,6 +243,26 @@ public class EmployeePerformanceReviewService : IEmployeePerformanceReviewServic
 
             await _repository.SaveEmployeeReviewAsync(review, request.SkillRatings, request.OverallComment, request.IsDraft);
 
+            if (!request.IsDraft)
+            {
+                var employeeName = $"{employee.User?.FirstName} {employee.User?.LastName}".Trim();
+
+                await _auditLogService.LogAsync(new AuditLogEntryDto
+                {
+                    CompanyId = employee.User!.CompanyId,
+                    UserId = userId,
+                    UserName = employeeName,
+                    Action = AuditAction.Submitted,
+                    Module = AuditModule.Performance,
+                    EntityType = nameof(EmployeePerformanceReview),
+                    EntityId = review.Id,
+                    TargetUserId = employee.Id,
+                    TargetUserName = employeeName,
+                    Description = $"{employeeName} submitted a self performance review.",
+                    Status = "Submitted"
+                });
+            }
+
             return new ApiResponse<string>
             {
                 Success = true,
@@ -374,6 +398,30 @@ public class EmployeePerformanceReviewService : IEmployeePerformanceReviewServic
             }
 
             await _repository.SaveManagerReviewAsync(review, request.SkillRatings, request.OverallComment, request.IsDraft);
+
+            if (!request.IsDraft)
+            {
+                var managerName = $"{manager.User?.FirstName} {manager.User?.LastName}".Trim();
+                var targetEmployee = await _employeeRepository.GetByIdAsync(review.EmployeeId);
+                var targetName = targetEmployee == null
+                    ? "the employee"
+                    : $"{targetEmployee.User?.FirstName} {targetEmployee.User?.LastName}".Trim();
+
+                await _auditLogService.LogAsync(new AuditLogEntryDto
+                {
+                    CompanyId = manager.User!.CompanyId,
+                    UserId = userId,
+                    UserName = managerName,
+                    Action = AuditAction.Approved,
+                    Module = AuditModule.Performance,
+                    EntityType = nameof(EmployeePerformanceReview),
+                    EntityId = review.Id,
+                    TargetUserId = review.EmployeeId,
+                    TargetUserName = targetName,
+                    Description = $"{managerName} submitted a performance review for {targetName}.",
+                    Status = "Completed"
+                });
+            }
 
             return new ApiResponse<string>
             {

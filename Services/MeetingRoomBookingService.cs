@@ -29,15 +29,18 @@ public class MeetingRoomBookingService : IMeetingRoomBookingService
     private readonly IMeetingRoomBookingRepository _bookingRepository;
     private readonly IMeetingRoomRepository _meetingRoomRepository;
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly IAuditLogService _auditLogService;
 
     public MeetingRoomBookingService(
         IMeetingRoomBookingRepository bookingRepository,
         IMeetingRoomRepository meetingRoomRepository,
-        IEmployeeRepository employeeRepository)
+        IEmployeeRepository employeeRepository,
+        IAuditLogService auditLogService)
     {
         _bookingRepository = bookingRepository;
         _meetingRoomRepository = meetingRoomRepository;
         _employeeRepository = employeeRepository;
+        _auditLogService = auditLogService;
     }
 
     private static MeetingRoomBookingResponse ToResponse(MeetingRoomBooking booking, Guid requesterEmployeeId, bool isAdmin)
@@ -237,6 +240,23 @@ public class MeetingRoomBookingService : IMeetingRoomBookingService
 
             await _bookingRepository.SaveChangesAsync();
 
+            var requesterName = $"{requester.User?.FirstName} {requester.User?.LastName}".Trim();
+
+            await _auditLogService.LogAsync(new AuditLogEntryDto
+            {
+                CompanyId = requester.User!.CompanyId,
+                UserId = userId,
+                UserName = requesterName,
+                Action = AuditAction.Created,
+                Module = AuditModule.MeetingRoom,
+                EntityType = nameof(MeetingRoomBooking),
+                EntityId = booking.Id,
+                TargetUserId = requester.Id,
+                TargetUserName = requesterName,
+                Description = $"{requesterName} booked {meetingRoom.Name} for {request.BookingDate:dd MMM yyyy} at {request.StartTime.ToString("hh:mm tt")}.",
+                Status = booking.Status.ToString()
+            });
+
             return new ApiResponse<Guid>
             {
                 Success = true,
@@ -294,6 +314,26 @@ public class MeetingRoomBookingService : IMeetingRoomBookingService
             _bookingRepository.Update(booking);
 
             await _bookingRepository.SaveChangesAsync();
+
+            var actingName = $"{requester.User?.FirstName} {requester.User?.LastName}".Trim();
+            var owner = booking.EmployeeId == requester.Id ? requester : await _employeeRepository.GetByIdAsync(booking.EmployeeId);
+            var ownerName = owner == null ? actingName : $"{owner.User?.FirstName} {owner.User?.LastName}".Trim();
+            var meetingRoom = await _meetingRoomRepository.GetByIdAsync(booking.MeetingRoomId);
+
+            await _auditLogService.LogAsync(new AuditLogEntryDto
+            {
+                CompanyId = requester.User!.CompanyId,
+                UserId = userId,
+                UserName = actingName,
+                Action = AuditAction.Cancelled,
+                Module = AuditModule.MeetingRoom,
+                EntityType = nameof(MeetingRoomBooking),
+                EntityId = booking.Id,
+                TargetUserId = owner?.Id,
+                TargetUserName = ownerName,
+                Description = $"{actingName} cancelled {ownerName}'s booking for {meetingRoom?.Name ?? "a meeting room"} on {booking.BookingDate:dd MMM yyyy}.",
+                Status = booking.Status.ToString()
+            });
 
             return new ApiResponse<bool>
             {

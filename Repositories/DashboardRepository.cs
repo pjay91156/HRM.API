@@ -1,4 +1,5 @@
 using HRM.API.Data;
+using HRM.API.Enums;
 using HRM.API.Responses;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +8,8 @@ public interface IDashboardRepository
     Task<DashboardResponse> GetDashboardAsync(Guid companyId);
     Task<List<HeadcountChartResponse>> GetHeadcountTrendAsync(Guid companyId);
     Task<List<DepartmentEmployeeCountResponse>> GetDepartmentEmployeeCountsAsync();
+    Task<DashboardTodayAttendanceResponse> GetTodayAttendanceSummaryAsync(Guid companyId);
+    Task<PendingApprovalsResponse> GetPendingApprovalsSummaryAsync(Guid managerId);
 }
 
 public class DashboardRepository : IDashboardRepository
@@ -117,5 +120,84 @@ public class DashboardRepository : IDashboardRepository
         }
 
         return chartData;
+    }
+
+    public async Task<DashboardTodayAttendanceResponse> GetTodayAttendanceSummaryAsync(Guid companyId)
+    {
+        var today = DateTime.UtcNow.Date;
+
+        var totalEmployees = await _context.Employees
+            .CountAsync(e => e.IsActive && e.User.CompanyId == companyId);
+
+        var presentCount = await _context.Attendances
+            .Where(a =>
+                a.AttendanceDate.Date == today &&
+                a.Employee.IsActive &&
+                a.Employee.User.CompanyId == companyId)
+            .Select(a => a.EmployeeId)
+            .Distinct()
+            .CountAsync();
+
+        var onLeaveCount = await _context.LeaveRequests
+            .Join(
+                _context.Employees,
+                leaveRequest => leaveRequest.EmployeeId,
+                employee => employee.Id,
+                (leaveRequest, employee) => new { leaveRequest, employee })
+            .Where(x =>
+                x.leaveRequest.Status == LeaveStatus.Approved &&
+                x.leaveRequest.FromDate.Date <= today &&
+                x.leaveRequest.ToDate.Date >= today &&
+                x.employee.IsActive &&
+                x.employee.User.CompanyId == companyId)
+            .Select(x => x.leaveRequest.EmployeeId)
+            .Distinct()
+            .CountAsync();
+
+        var absentCount = Math.Max(0, totalEmployees - presentCount - onLeaveCount);
+
+        var attendanceRate = totalEmployees > 0
+            ? Math.Round((decimal)presentCount / totalEmployees * 100, 2)
+            : 0;
+
+        return new DashboardTodayAttendanceResponse
+        {
+            TotalEmployees = totalEmployees,
+            PresentCount = presentCount,
+            OnLeaveCount = onLeaveCount,
+            AbsentCount = absentCount,
+            AttendanceRate = attendanceRate
+        };
+    }
+
+    public async Task<PendingApprovalsResponse> GetPendingApprovalsSummaryAsync(Guid managerId)
+    {
+        var pendingLeaveRequests = await _context.LeaveRequests
+            .Join(
+                _context.Employees,
+                leaveRequest => leaveRequest.EmployeeId,
+                employee => employee.Id,
+                (leaveRequest, employee) => new { leaveRequest, employee })
+            .CountAsync(x =>
+                x.leaveRequest.Status == LeaveStatus.Pending &&
+                x.employee.ManagerId == managerId);
+
+        // Each regularization request can have multiple session-change rows
+        // (one per Add/Edit/Delete), so count distinct attendance requests
+        // rather than raw rows to match what the approvals list shows.
+        var pendingRegularizations = await _context.AttendanceRegularizations
+            .Where(r =>
+                r.IsActive &&
+                r.Status == (int)AttendanceRegularizationStatus.Pending &&
+                r.Attendance.Employee.ManagerId == managerId)
+            .Select(r => r.AttendanceId)
+            .Distinct()
+            .CountAsync();
+
+        return new PendingApprovalsResponse
+        {
+            PendingLeaveRequests = pendingLeaveRequests,
+            PendingRegularizations = pendingRegularizations
+        };
     }
 }

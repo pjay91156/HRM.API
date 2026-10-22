@@ -75,4 +75,52 @@ public async Task<IActionResult>
 
         return Ok(result);
     }
+
+    [HttpGet("today-attendance")]
+    public async Task<IActionResult> GetTodayAttendance()
+    {
+        try
+        {
+            var companyId = User.GetCompanyId();
+
+            var response = await _dashboardService.GetTodayAttendanceSummaryAsync(companyId);
+
+            if (!response.Success)
+                return BadRequest(response);
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponse<string>
+            {
+                Success = false,
+                Message = ex.Message
+            });
+        }
+    }
+
+    [HttpGet("pending-approvals")]
+    public async Task<IActionResult> GetPendingApprovals()
+    {
+        try
+        {
+            var userId = User.GetUserId();
+
+            var response = await _dashboardService.GetPendingApprovalsSummaryAsync(userId);
+
+            if (!response.Success)
+                return BadRequest(response);
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponse<string>
+            {
+                Success = false,
+                Message = ex.Message
+            });
+        }
+    }
 }

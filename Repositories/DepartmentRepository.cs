@@ -9,6 +9,7 @@ public interface IDepartmentRepository
     Task AddDepartmnetAsync(Department department);
     Task<bool> DeleteDepartmentAsync(Guid deparmentId);
     Task<Department?> GetByIdAsync(Guid id);
+    Task<bool> ExistsByNameAsync(string departmentName, Guid companyId, Guid? excludeId = null);
     Task SaveChangesAsync();
 }
 public class DepartmentRepository : IDepartmentRepository
@@ -58,6 +59,21 @@ public class DepartmentRepository : IDepartmentRepository
     {
         return await _context.Departments
             .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    public async Task<bool> ExistsByNameAsync(string departmentName, Guid companyId, Guid? excludeId = null)
+    {
+        var query = _context.Departments
+            .Where(x => x.IsActive
+                && x.CompanyId == companyId
+                && x.DepartmentName.ToLower() == departmentName.ToLower());
+
+        if (excludeId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeId.Value);
+        }
+
+        return await query.AnyAsync();
     }
 
     public async Task SaveChangesAsync()

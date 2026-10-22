@@ -10,6 +10,7 @@ namespace HRM.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _service;
+    
 
     public AuthController(IAuthService service)
     {

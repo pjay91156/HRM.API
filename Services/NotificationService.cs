@@ -2,6 +2,8 @@ using HRM.API.Enums;
 using HRM.API.Models;
 using HRM.API.Repositories;
 using HRM.API.Responses;
+using HRM.API.Hubs;
+using Microsoft.AspNetCore.SignalR;
 
 namespace HRM.API.Services;
 
@@ -25,10 +27,12 @@ public interface INotificationService
 public class NotificationService : INotificationService
 {
     private readonly INotificationRepository _notificationRepository;
+    private readonly IHubContext<NotificationHub> _hubContext;
 
-    public NotificationService(INotificationRepository notificationRepository)
+    public NotificationService(INotificationRepository notificationRepository,IHubContext<NotificationHub> hubContext)
     {
         _notificationRepository = notificationRepository;
+        _hubContext = hubContext;
     }
 
     public async Task CreateAsync(
@@ -54,6 +58,20 @@ public class NotificationService : INotificationService
         };
 
         await _notificationRepository.AddAsync(notification);
+
+        var notificationResponse = new NotificationResponse
+        {
+            Id = notification.Id,
+            Title = notification.Title,
+            Message = notification.Message,
+            Type = notification.Type.ToString(),
+            Link = notification.Link,
+            IsRead = notification.IsRead,
+            CreatedAt = notification.CreatedAt
+        };
+
+        await _hubContext.Clients.User(userId.ToString())
+            .SendAsync("ReceiveNotification", notificationResponse);
     }
 
     public async Task<ApiResponse<NotificationListResponse>> GetMyNotificationsAsync(Guid userId)

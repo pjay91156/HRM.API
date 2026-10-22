@@ -1,4 +1,5 @@
-namespace HRM.API.Enums;
+using HRM.API.Enums;
+namespace HRM.API.Responses;
 public class LeaveRequestResponse
 {
     public Guid Id { get; set; }

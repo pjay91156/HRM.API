@@ -40,6 +40,9 @@ public class LeaveTypeController : ControllerBase
                 request,
                 userId);
 
+        if (!response.Success)
+            return BadRequest(response);
+
         return Ok(response);
     }
 

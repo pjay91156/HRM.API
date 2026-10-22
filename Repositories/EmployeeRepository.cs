@@ -17,6 +17,8 @@ public interface IEmployeeRepository
     Task<Employee?> GetByUserIdAsync(Guid userId);
     Task<Employee?> GetByIdAsync(Guid employeeId);
     Task<Employee?> GetProfileByUserIdAsync(Guid userId);
+    Task<bool> ActiveUserEmailExistsAsync(string email, Guid? excludeUserId = null);
+    Task<bool> EmployeeCodeExistsAsync(string employeeCode, Guid companyId, Guid? excludeEmployeeId = null);
     Task SaveChangesAsync();
 
 }
@@ -150,6 +152,36 @@ public class EmployeeRepository : IEmployeeRepository
 
         return true;
     }
+    // Email is the login identifier, so it must be unique across all active users (not just this company)
+    public async Task<bool> ActiveUserEmailExistsAsync(string email, Guid? excludeUserId = null)
+    {
+        var query = _context.Users
+            .Where(x => x.IsActive && x.Email.ToLower() == email.ToLower());
+
+        if (excludeUserId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeUserId.Value);
+        }
+
+        return await query.AnyAsync();
+    }
+
+    public async Task<bool> EmployeeCodeExistsAsync(string employeeCode, Guid companyId, Guid? excludeEmployeeId = null)
+    {
+        var query = _context.Employees
+            .Where(x => x.IsActive
+                && x.User.IsActive
+                && x.User.CompanyId == companyId
+                && x.EmployeeCode.ToLower() == employeeCode.ToLower());
+
+        if (excludeEmployeeId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeEmployeeId.Value);
+        }
+
+        return await query.AnyAsync();
+    }
+
     public async Task AddEmployeeAsync(Employee employee)
     {
         await _context.Employees.AddAsync(employee);

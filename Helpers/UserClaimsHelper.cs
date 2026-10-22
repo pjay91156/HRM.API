@@ -13,7 +13,7 @@ public static class ClaimsPrincipalExtensions
             return guid;
         }
 
-        return new Guid("29BE1D7B-444E-4481-83AA-98A1235595C9");
+        throw new UnauthorizedAccessException("User Id claim not found.");
     }
 
     public static Guid GetCompanyId(this ClaimsPrincipal user)

@@ -39,10 +39,22 @@ public class DesignationService : IDesignationService
 {
     try
     {
+        var nameExists = await _designationRepository.ExistsInDepartmentAsync(request.Name.Trim(), request.DepartmentId);
+
+        if (nameExists)
+        {
+            return new ApiResponse<Guid?>
+            {
+                Success = false,
+                Message = "This designation already exists in the selected department.",
+                Data = null
+            };
+        }
+
         var designation = new Designation
         {
             Id=new Guid(),
-             DesignationName= request.Name,
+             DesignationName= request.Name.Trim(),
              CreatedBy=userId,
              IsActive=true,
             DepartmentId = request.DepartmentId
@@ -82,7 +94,19 @@ public class DesignationService : IDesignationService
         };
     }
 
-    designation.DesignationName = request.Name;
+    var nameExists = await _designationRepository.ExistsInDepartmentAsync(request.Name.Trim(), request.DepartmentId, request.Id);
+
+    if (nameExists)
+    {
+        return new ApiResponse<bool>
+        {
+            Success = false,
+            Message = "This designation already exists in the selected department.",
+            Data = false
+        };
+    }
+
+    designation.DesignationName = request.Name.Trim();
     designation.DepartmentId = request.DepartmentId;
     designation.UpdatedBy = userId;
     designation.UpdatedAt = DateTime.UtcNow;

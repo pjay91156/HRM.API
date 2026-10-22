@@ -39,4 +39,17 @@ public class ApplicationDbContext : DbContext
       public DbSet<MeetingRoomAmenityDetail> MeetingRoomAmenityDetails => Set<MeetingRoomAmenityDetail>();
       public DbSet<MeetingRoomBooking> MeetingRoomBookings => Set<MeetingRoomBooking>();
       public DbSet<CompanyDocument> CompanyDocuments => Set<CompanyDocument>();
+      public DbSet<Holiday> Holidays => Set<Holiday>();
+      public DbSet<EmployeeOptionalHolidaySelection> EmployeeOptionalHolidaySelections => Set<EmployeeOptionalHolidaySelection>();
+      public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+      public DbSet<Course> Courses => Set<Course>();
+      public DbSet<CourseModule> CourseModules => Set<CourseModule>();
+      public DbSet<ModuleQuiz> ModuleQuizzes => Set<ModuleQuiz>();
+      public DbSet<ModuleQuizQuestion> ModuleQuizQuestions => Set<ModuleQuizQuestion>();
+      public DbSet<ModuleQuizOption> ModuleQuizOptions => Set<ModuleQuizOption>();
+      public DbSet<ModuleQuizAttempt> ModuleQuizAttempts => Set<ModuleQuizAttempt>();
+      public DbSet<ModuleQuizAnswer> ModuleQuizAnswers => Set<ModuleQuizAnswer>();
+      public DbSet<ModuleQuizAnswerOption> ModuleQuizAnswerOptions => Set<ModuleQuizAnswerOption>();
+      public DbSet<ModuleProgress> ModuleProgress => Set<ModuleProgress>();
+      public DbSet<CourseProgress> CourseProgress => Set<CourseProgress>();
 }

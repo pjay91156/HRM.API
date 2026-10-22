@@ -45,6 +45,9 @@ public class DepartmentController : ControllerBase
                 companyId,
                 userId);
 
+            if (!response.Success)
+                return BadRequest(response);
+
             return Ok(response);
         }
         catch (Exception ex)

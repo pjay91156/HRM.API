@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using HRM.API.Extensions;
 
 namespace HRM.API.Controllers;
-// [Authorize]
+[Authorize]
 [Route("api/[controller]")]
 [ApiController]
 public class LeaveRequestController : ControllerBase

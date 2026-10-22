@@ -2,10 +2,12 @@ using HRM.API.DTOs;
 using HRM.API.Extensions;
 using HRM.API.Responses;
 using HRM.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HRM.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class RegularizeAttendanceController : ControllerBase

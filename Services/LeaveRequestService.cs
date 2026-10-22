@@ -38,15 +38,21 @@ public class LeaveRequestService : ILeaveRequestService
     private readonly ILeaveRequestRepository _leaveRequestRepository;
     private readonly IEmployeeRepository _employeeRepository;
     private readonly INotificationService _notificationService;
+    private readonly IHolidayRepository _holidayRepository;
+    private readonly IAuditLogService _auditLogService;
 
     public LeaveRequestService(
         ILeaveRequestRepository leaveRequestRepository,
         IEmployeeRepository employeeRepository,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        IHolidayRepository holidayRepository,
+        IAuditLogService auditLogService)
     {
         _leaveRequestRepository = leaveRequestRepository;
         _employeeRepository = employeeRepository;
         _notificationService = notificationService;
+        _holidayRepository = holidayRepository;
+        _auditLogService = auditLogService;
     }
 
     public async Task<ApiResponse<string>> ApplyLeaveAsync(
@@ -105,10 +111,31 @@ public class LeaveRequestService : ILeaveRequestService
                 };
             }
 
+            var holidayDates = (await _holidayRepository.GetHolidayDatesAsync(
+                request.FromDate.Date, request.ToDate.Date)).ToHashSet();
+
+            if (request.LeaveDuration == LeaveDuration.HalfDay && holidayDates.Contains(request.FromDate.Date))
+            {
+                return new ApiResponse<string>
+                {
+                    Success = false,
+                    Message = "Selected date is a holiday. Please choose a working day."
+                };
+            }
+
             decimal totalDays =
                 request.LeaveDuration == LeaveDuration.HalfDay
                 ? 0.5m
-                : CalculateWorkingDays(request.FromDate.Date, request.ToDate.Date);
+                : CalculateWorkingDays(request.FromDate.Date, request.ToDate.Date, holidayDates);
+
+            if (totalDays == 0)
+            {
+                return new ApiResponse<string>
+                {
+                    Success = false,
+                    Message = "Selected date(s) fall on a weekend or holiday. Please choose a working day."
+                };
+            }
 
             var balances = await _leaveRequestRepository.GetLeaveBalanceAsync(employee.Id);
             var balance = balances.FirstOrDefault(x => x.LeaveTypeId == request.LeaveTypeId);
@@ -142,6 +169,23 @@ public class LeaveRequestService : ILeaveRequestService
             };
 
             await _leaveRequestRepository.AddAsync(leaveRequest);
+
+            var employeeDisplayName = $"{employee.User?.FirstName} {employee.User?.LastName}".Trim();
+
+            await _auditLogService.LogAsync(new AuditLogEntryDto
+            {
+                CompanyId = employee.User!.CompanyId,
+                UserId = userId,
+                UserName = employeeDisplayName,
+                Action = AuditAction.Submitted,
+                Module = AuditModule.Leave,
+                EntityType = nameof(LeaveRequest),
+                EntityId = leaveRequest.Id,
+                TargetUserId = employee.Id,
+                TargetUserName = employeeDisplayName,
+                Description = $"{employeeDisplayName} submitted a leave request for {request.FromDate:dd MMM yyyy} - {request.ToDate:dd MMM yyyy}.",
+                Status = leaveRequest.Status.ToString()
+            });
 
             if (employee.ManagerId.HasValue)
             {
@@ -330,6 +374,31 @@ public class LeaveRequestService : ILeaveRequestService
             await _leaveRequestRepository.UpdateAsync(leaveRequest);
 
             var owner = await _employeeRepository.GetByIdAsync(leaveRequest.EmployeeId);
+            var approver = await _employeeRepository.GetByUserIdAsync(approverId);
+
+            if (owner != null && approver != null)
+            {
+                var ownerName = $"{owner.User?.FirstName} {owner.User?.LastName}".Trim();
+                var approverName = $"{approver.User?.FirstName} {approver.User?.LastName}".Trim();
+                var approvedForAudit = request.Status == LeaveStatus.Approved;
+
+                await _auditLogService.LogAsync(new AuditLogEntryDto
+                {
+                    CompanyId = approver.User!.CompanyId,
+                    UserId = approverId,
+                    UserName = approverName,
+                    Action = approvedForAudit ? AuditAction.Approved : AuditAction.Rejected,
+                    Module = AuditModule.Leave,
+                    EntityType = nameof(LeaveRequest),
+                    EntityId = leaveRequest.Id,
+                    TargetUserId = owner.Id,
+                    TargetUserName = ownerName,
+                    Description = approvedForAudit
+                        ? $"{approverName} approved {ownerName}'s leave request."
+                        : $"{approverName} rejected {ownerName}'s leave request.",
+                    Status = leaveRequest.Status.ToString()
+                });
+            }
 
             if (owner != null)
             {
@@ -431,13 +500,15 @@ public class LeaveRequestService : ILeaveRequestService
         }
     }
 
-    private static decimal CalculateWorkingDays(DateTime fromDate, DateTime toDate)
+    private static decimal CalculateWorkingDays(DateTime fromDate, DateTime toDate, HashSet<DateTime> holidayDates)
     {
         decimal days = 0;
 
         for (var date = fromDate; date <= toDate; date = date.AddDays(1))
         {
-            if (date.DayOfWeek != DayOfWeek.Saturday && date.DayOfWeek != DayOfWeek.Sunday)
+            if (date.DayOfWeek != DayOfWeek.Saturday
+                && date.DayOfWeek != DayOfWeek.Sunday
+                && !holidayDates.Contains(date.Date))
             {
                 days++;
             }
@@ -480,6 +551,28 @@ public class LeaveRequestService : ILeaveRequestService
             leaveRequest.UpdatedBy = updatedBy;
 
             await _leaveRequestRepository.UpdateAsync(leaveRequest);
+
+            var owner = await _employeeRepository.GetByIdAsync(leaveRequest.EmployeeId);
+
+            if (owner != null)
+            {
+                var ownerName = $"{owner.User?.FirstName} {owner.User?.LastName}".Trim();
+
+                await _auditLogService.LogAsync(new AuditLogEntryDto
+                {
+                    CompanyId = owner.User!.CompanyId,
+                    UserId = updatedBy,
+                    UserName = ownerName,
+                    Action = AuditAction.Cancelled,
+                    Module = AuditModule.Leave,
+                    EntityType = nameof(LeaveRequest),
+                    EntityId = leaveRequest.Id,
+                    TargetUserId = owner.Id,
+                    TargetUserName = ownerName,
+                    Description = $"{ownerName} cancelled a leave request for {leaveRequest.FromDate:dd MMM yyyy} - {leaveRequest.ToDate:dd MMM yyyy}.",
+                    Status = leaveRequest.Status.ToString()
+                });
+            }
 
             return new ApiResponse<string>
             {

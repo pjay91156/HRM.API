@@ -47,11 +47,35 @@ public class LeaveTypeService : ILeaveTypeService
         LeaveTypeDto request,
         Guid userId)
     {
+        var nameExists =
+            await _leaveTypeRepository.ExistsByNameAsync(request.LeaveName.Trim());
+
+        if (nameExists)
+        {
+            return new ApiResponse<string>
+            {
+                Success = false,
+                Message = "A leave type with this name already exists."
+            };
+        }
+
+        var codeExists =
+            await _leaveTypeRepository.ExistsByCodeAsync(request.LeaveCode.Trim());
+
+        if (codeExists)
+        {
+            return new ApiResponse<string>
+            {
+                Success = false,
+                Message = "A leave type with this code already exists."
+            };
+        }
+
         var leaveType = new LeaveType
         {
             Id = Guid.NewGuid(),
-            LeaveName = request.LeaveName,
-            LeaveCode = request.LeaveCode,
+            LeaveName = request.LeaveName.Trim(),
+            LeaveCode = request.LeaveCode.Trim(),
             Description = request.Description,
             DefaultDays = request.DefaultDays,
             IsActive = true,
@@ -87,8 +111,34 @@ public class LeaveTypeService : ILeaveTypeService
             };
         }
 
-        leaveType.LeaveName = request.LeaveName;
-        leaveType.LeaveCode = request.LeaveCode;
+        var nameExists =
+            await _leaveTypeRepository.ExistsByNameAsync(request.LeaveName.Trim(), request.Id);
+
+        if (nameExists)
+        {
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "A leave type with this name already exists.",
+                Data = false
+            };
+        }
+
+        var codeExists =
+            await _leaveTypeRepository.ExistsByCodeAsync(request.LeaveCode.Trim(), request.Id);
+
+        if (codeExists)
+        {
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "A leave type with this code already exists.",
+                Data = false
+            };
+        }
+
+        leaveType.LeaveName = request.LeaveName.Trim();
+        leaveType.LeaveCode = request.LeaveCode.Trim();
         leaveType.Description = request.Description;
         leaveType.DefaultDays = request.DefaultDays;
         leaveType.UpdatedAt = DateTime.UtcNow;

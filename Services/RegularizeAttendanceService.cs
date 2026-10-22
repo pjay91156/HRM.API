@@ -25,13 +25,15 @@ public class RegularizeAttendanceService : IRegularizeAttendanceService
     private readonly IRegularizeAttendanceRepository _regularizeAttendanceRepository;
      private readonly IEmployeeRepository _employeeRepository;
      private readonly INotificationService _notificationService;
+     private readonly IAuditLogService _auditLogService;
 
     public RegularizeAttendanceService(
-        IRegularizeAttendanceRepository regularizeAttendanceRepository,IEmployeeRepository employeeRepository, INotificationService notificationService)
+        IRegularizeAttendanceRepository regularizeAttendanceRepository,IEmployeeRepository employeeRepository, INotificationService notificationService, IAuditLogService auditLogService)
     {
         _regularizeAttendanceRepository = regularizeAttendanceRepository;
         _employeeRepository=employeeRepository;
         _notificationService = notificationService;
+        _auditLogService = auditLogService;
     }
 
     public async Task<ApiResponse<AttendanceSessionsResponse>>
@@ -52,7 +54,7 @@ public class RegularizeAttendanceService : IRegularizeAttendanceService
             {
                 return new ApiResponse<AttendanceSessionsResponse>
                 {
-                    Success = false,
+                    Success = true,
                     Message = "Attendance not found.",
                     Errors = new List<string>
                     {
@@ -126,6 +128,26 @@ public class RegularizeAttendanceService : IRegularizeAttendanceService
         }
 
         var employee = await _employeeRepository.GetByUserIdAsync(userId);
+
+        if (employee != null)
+        {
+            var submitterName = $"{employee.User?.FirstName} {employee.User?.LastName}".Trim();
+
+            await _auditLogService.LogAsync(new AuditLogEntryDto
+            {
+                CompanyId = employee.User!.CompanyId,
+                UserId = userId,
+                UserName = submitterName,
+                Action = AuditAction.Submitted,
+                Module = AuditModule.Attendance,
+                EntityType = nameof(AttendanceRegularization),
+                EntityId = request.AttendanceId,
+                TargetUserId = employee.Id,
+                TargetUserName = submitterName,
+                Description = $"{submitterName} submitted an attendance regularization request.",
+                Status = "Pending"
+            });
+        }
 
         if (employee?.ManagerId != null)
         {
@@ -304,6 +326,31 @@ public async Task<ApiResponse<object>> ApproveRejectRegularizationAsync(Guid app
         }
 
         var owner = await _employeeRepository.GetByIdAsync(request.EmployeeId);
+        var approver = await _employeeRepository.GetByUserIdAsync(approverId);
+
+        if (owner != null && approver != null)
+        {
+            var ownerName = $"{owner.User?.FirstName} {owner.User?.LastName}".Trim();
+            var approverName = $"{approver.User?.FirstName} {approver.User?.LastName}".Trim();
+            var approvedForAudit = request.Status == (int)AttendanceRegularizationStatus.Approved;
+
+            await _auditLogService.LogAsync(new AuditLogEntryDto
+            {
+                CompanyId = approver.User!.CompanyId,
+                UserId = approverId,
+                UserName = approverName,
+                Action = approvedForAudit ? AuditAction.Approved : AuditAction.Rejected,
+                Module = AuditModule.Attendance,
+                EntityType = nameof(AttendanceRegularization),
+                EntityId = request.AttendanceId,
+                TargetUserId = owner.Id,
+                TargetUserName = ownerName,
+                Description = approvedForAudit
+                    ? $"{approverName} approved {ownerName}'s attendance regularization request."
+                    : $"{approverName} rejected {ownerName}'s attendance regularization request.",
+                Status = approvedForAudit ? "Approved" : "Rejected"
+            });
+        }
 
         if (owner != null)
         {

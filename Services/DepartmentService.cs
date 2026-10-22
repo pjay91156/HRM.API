@@ -24,12 +24,23 @@ public class DepartmentService : IDepartmentService
     }
     public async Task<ApiResponse<string>> AddDepartmentAsync(DepartmentDto request,Guid companyId,Guid userId)
     {
+        var nameExists = await _departmentRepository.ExistsByNameAsync(request.DepartmentName.Trim(), companyId);
+
+        if (nameExists)
+        {
+            return new ApiResponse<string>
+            {
+                Success = false,
+                Message = "A department with this name already exists."
+            };
+        }
+
          var Id = Guid.NewGuid();
          var department = new Department
         {
             Id = Id,
             CompanyId = companyId,
-            DepartmentName = request.DepartmentName,            
+            DepartmentName = request.DepartmentName.Trim(),
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId
@@ -57,7 +68,19 @@ public class DepartmentService : IDepartmentService
             };
         }
 
-        department.DepartmentName = request.DepartmentName;
+        var nameExists = await _departmentRepository.ExistsByNameAsync(request.DepartmentName.Trim(), department.CompanyId, request.Id);
+
+        if (nameExists)
+        {
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "A department with this name already exists.",
+                Data = false
+            };
+        }
+
+        department.DepartmentName = request.DepartmentName.Trim();
         department.UpdatedAt = DateTime.UtcNow;
         department.UpdatedBy = userId;
 

@@ -10,6 +10,7 @@ public interface IDesignationRepository
     Task<bool> DeactivateAsync(Guid id, Guid userId);
     Task SaveChangesAsync();
     Task<Designation?> GetByIdAsync(Guid id);
+    Task<bool> ExistsInDepartmentAsync(string designationName, Guid departmentId, Guid? excludeId = null);
 }
 public class DesignationRepository : IDesignationRepository
 {
@@ -23,6 +24,21 @@ public class DesignationRepository : IDesignationRepository
 {
     return await _context.Designations
         .FirstOrDefaultAsync(x => x.Id == id);
+}
+
+public async Task<bool> ExistsInDepartmentAsync(string designationName, Guid departmentId, Guid? excludeId = null)
+{
+    var query = _context.Designations
+        .Where(x => x.IsActive
+            && x.DepartmentId == departmentId
+            && x.DesignationName.ToLower() == designationName.ToLower());
+
+    if (excludeId.HasValue)
+    {
+        query = query.Where(x => x.Id != excludeId.Value);
+    }
+
+    return await query.AnyAsync();
 }
 
 public async Task SaveChangesAsync()

@@ -12,6 +12,10 @@ public interface ILeaveTypeRepository
 
     Task<LeaveType?> GetByIdAsync(Guid id);
 
+    Task<bool> ExistsByCodeAsync(string leaveCode, Guid? excludeId = null);
+
+    Task<bool> ExistsByNameAsync(string leaveName, Guid? excludeId = null);
+
     Task SaveChangesAsync();
 }
 public class LeaveTypeRepository : ILeaveTypeRepository
@@ -63,6 +67,32 @@ public class LeaveTypeRepository : ILeaveTypeRepository
     {
         return await _context.LeaveTypes
             .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    public async Task<bool> ExistsByCodeAsync(string leaveCode, Guid? excludeId = null)
+    {
+        var query = _context.LeaveTypes
+            .Where(x => x.IsActive && x.LeaveCode.ToLower() == leaveCode.ToLower());
+
+        if (excludeId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeId.Value);
+        }
+
+        return await query.AnyAsync();
+    }
+
+    public async Task<bool> ExistsByNameAsync(string leaveName, Guid? excludeId = null)
+    {
+        var query = _context.LeaveTypes
+            .Where(x => x.IsActive && x.LeaveName.ToLower() == leaveName.ToLower());
+
+        if (excludeId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeId.Value);
+        }
+
+        return await query.AnyAsync();
     }
 
     public async Task SaveChangesAsync()

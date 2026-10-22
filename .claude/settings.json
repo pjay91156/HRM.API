@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /d/HRM/HRM.React/src/components/common/ | head -30)",
+      "Read(//d/HRM/HRM.React/src/components/common//**)"
+    ]
+  }
+}
